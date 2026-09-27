@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/* iOS Safari auto-zooms the page on focus if an input's font-size is
+   under 16px. Force form controls to 16px so tapping into any input never
+   triggers that zoom (it also throws off fixed-position modal layout). */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+:root {
+  color-scheme: light;
+  /* Postcard Journal — kraft paper, ink navy, stamp red, tape gold */
+  --bg: #E9DEC4;
+  --surface: #FBF5E9;
+  --border: #D3C4A0;
+  --text-primary: #26344A;
+  --text-body: #3B3226;
+  --text-tertiary: #5C513F;
+  --text-secondary: #7C6A4E;
+  --text-muted: #94845F;
+  --text-faint: #B4A57E;
+  --icon-empty: #C9BB98;
+  --scrollbar-thumb: #D3C4A0;
+  --primary-bg: #26344A;
+  --primary-text: #F1EADA;
+  --stamp: #B23A2E;
+  --tape: #E8C468;
+
+  /* Budget category palette — validated categorical order (dataviz skill),
+     ALL checks pass at surface #ffffff; contrast WARN on 3 slots is
+     mitigated by always showing a direct text label alongside the bar. */
+  --cat-flights: #2a78d6;
+  --cat-accommodation: #eb6834;
+  --cat-food: #1baf7a;
+  --cat-activities: #eda100;
+  --cat-transport: #e87ba4;
+  --cat-shopping: #008300;
+  --cat-other: #4a3aa7;
+}
+
+:root.dark {
+  color-scheme: dark;
+  /* Postcard Journal, night desk — deep ink navy paper, cream ink */
+  --bg: #1B2430;
+  --surface: #232E3D;
+  --border: #37455A;
+  --text-primary: #F1EADA;
+  --text-body: #E5DCC8;
+  --text-tertiary: #CBC0A6;
+  --text-secondary: #A79A7C;
+  --text-muted: #8A7F68;
+  --text-faint: #5C5A4E;
+  --icon-empty: #4A5568;
+  --scrollbar-thumb: #3D4A5E;
+  --primary-bg: #F1EADA;
+  --primary-text: #1B2430;
+  --stamp: #E0574A;
+  --tape: #E8C468;
+
+  /* Budget category palette — dark-surface steps, validated against #26221b. */
+  --cat-flights: #3987e5;
+  --cat-accommodation: #d95926;
+  --cat-food: #199e70;
+  --cat-activities: #c98500;
+  --cat-transport: #d55181;
+  --cat-shopping: #008300;
+  --cat-other: #9085e9;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 5%, transparent) 0 2px, transparent 2px 6px);
+  transition: background-color 200ms ease;
+}
