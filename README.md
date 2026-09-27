@@ -33,14 +33,18 @@ pairing codes).
 - Payment/subscription gating (Stripe)
 - Dark mode toggle, PWA install support
 
+The Supabase project URL and publishable ("anon") key are hardcoded in
+`src/supabase.js`, same as the personal app — that key is meant to be
+public-facing, and Row Level Security (see `supabase/schema.sql`) is what
+actually protects the data, not secrecy of the key.
+
+Deployed automatically to GitHub Pages on every push to `main` (see
+`.github/workflows/deploy-pages.yml`).
+
 ## Setup
 
-1. Create a new Supabase project at supabase.com.
-2. In its SQL Editor, run `supabase/schema.sql`.
-3. Copy `.env.example` to `.env` and fill in your project's URL and anon
-   key (Project Settings → API).
-4. `npm install`
-5. `npm run dev`
+1. `npm install`
+2. `npm run dev`
 
 ## Build
 
