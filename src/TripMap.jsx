@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Plus, Trash2 } from "lucide-react";
 import { geocodeDestination } from "./geocode";
+import { getEffectiveStops } from "./stops";
 
 function pinIcon(color) {
   return L.divIcon({
@@ -22,12 +23,14 @@ export default function TripMap({ trip, onSave }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const stops = getEffectiveStops(trip);
+
   useEffect(() => {
     if (!containerRef.current || !trip.destination_lat) return;
 
     const map = L.map(containerRef.current, {
       center: [trip.destination_lat, trip.destination_lng],
-      zoom: 12,
+      zoom: stops.length > 1 ? 5 : 12,
       scrollWheelZoom: false,
     });
     mapRef.current = map;
@@ -39,9 +42,19 @@ export default function TripMap({ trip, onSave }) {
 
     requestAnimationFrame(() => map.invalidateSize());
 
-    L.marker([trip.destination_lat, trip.destination_lng], { icon: pinIcon("#B23A2E") })
-      .addTo(map)
-      .bindPopup(`<strong>${trip.destination_name}</strong>`);
+    if (stops.length > 1) {
+      stops.forEach((stop, i) => {
+        L.marker([stop.lat, stop.lng], { icon: pinIcon("#B23A2E") })
+          .addTo(map)
+          .bindPopup(`<strong>${i + 1}. ${stop.name}</strong><br>${stop.days} day(s)`);
+      });
+      L.polyline(stops.map((s) => [s.lat, s.lng]), { color: "#B23A2E", weight: 2, dashArray: "6 6" }).addTo(map);
+      map.fitBounds(stops.map((s) => [s.lat, s.lng]), { padding: [30, 30] });
+    } else {
+      L.marker([trip.destination_lat, trip.destination_lng], { icon: pinIcon("#B23A2E") })
+        .addTo(map)
+        .bindPopup(`<strong>${trip.destination_name}</strong>`);
+    }
 
     pins.forEach((pin) => {
       L.marker([pin.lat, pin.lng], { icon: pinIcon("#2C5F7C") }).addTo(map).bindPopup(`<strong>${pin.name}</strong>`);
@@ -52,7 +65,7 @@ export default function TripMap({ trip, onSave }) {
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trip.destination_lat, trip.destination_lng, pins.length]);
+  }, [trip.destination_lat, trip.destination_lng, stops.length, pins.length]);
 
   const addPin = async (e) => {
     e.preventDefault();

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Camera, Utensils } from "lucide-react";
 import { enumerateDates } from "./dates";
+import { getEffectiveStops, getStopForDate } from "./stops";
 
 const TYPE_ICON = {
   photo: <Camera size={14} style={{ color: "var(--stamp)" }} />,
@@ -98,13 +99,16 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
   );
 }
 
-function DayCard({ date, dayNumber, items, onAdd, onEdit }) {
+function DayCard({ date, dayNumber, stopName, items, onAdd, onEdit }) {
   const sorted = [...items].sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
 
   return (
     <div className="p-4 rounded-2xl mb-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
       <div className="flex items-center justify-between mb-2">
-        <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{formatDay(date, dayNumber)}</p>
+        <div>
+          <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{formatDay(date, dayNumber)}</p>
+          {stopName && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{stopName}</p>}
+        </div>
         <button onClick={() => onAdd(date)} className="text-sm underline" style={{ color: "var(--text-secondary)" }}>
           + Add
         </button>
@@ -141,6 +145,8 @@ export default function ItineraryTab({ trip, onSave, aiSlot }) {
 
   const items = trip.itinerary || [];
   const days = enumerateDates(trip.start_date, trip.end_date);
+  const stops = getEffectiveStops(trip);
+  const showStopLabel = stops.length > 1;
 
   const closeModal = () => {
     setModalDate(null);
@@ -172,6 +178,7 @@ export default function ItineraryTab({ trip, onSave, aiSlot }) {
           key={date}
           date={date}
           dayNumber={i + 1}
+          stopName={showStopLabel ? getStopForDate(stops, date)?.name : null}
           items={items.filter((it) => it.date === date)}
           onAdd={(d) => setModalDate(d)}
           onEdit={(item) => {

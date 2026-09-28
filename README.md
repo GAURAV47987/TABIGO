@@ -12,22 +12,30 @@ pairing codes).
 - **Multi-trip, any-destination data model** — a `trips` table (one row per
   trip, owned by a `user_id`, gated by Row Level Security so a user can only
   ever see their own trips), instead of one hardcoded itinerary.
-- **New trip flow** — type any destination ("Bali", "Lisbon", anything) and
-  a date range; it's geocoded for free via OpenStreetMap's Nominatim
-  (`src/geocode.js`), no API key needed, so weather/maps/currency will work
-  for any place without a hardcoded city list.
+- **New trip flow** — a trip is a sequence of one or more **stops**
+  (`src/stops.js`): name each stop and how many days there, in order, and
+  the app sequences their dates automatically from the trip's start date
+  and geocodes each one for free via OpenStreetMap's Nominatim
+  (`src/geocode.js`). A single-stop trip works exactly like a single
+  destination; multi-stop trips (e.g. an Athens → Paris → Amsterdam Europe
+  trip) get a per-day city label in the Itinerary and a route line on the
+  Map. Older trips created before this existed still work — they're
+  treated as one implicit stop spanning their original dates.
 - **Postcard Journal theme** — ported as-is from the personal app
   (`src/index.css`): kraft-paper background, ink-navy/stamp-red/tape-gold
   accents, light/dark mode tokens.
 - **Trip Hub** — tabbed view (Itinerary / Budget / Convert / Map / Pack) for
   each trip.
 - **Itinerary** (`src/Itinerary.jsx`) — one day card per day of the trip,
-  auto-generated from its dates; add/edit/delete time-optional plan items.
-  A "Generate itinerary with AI" card drafts a full day-by-day plan
+  auto-generated from its dates, labeled with which stop that day belongs
+  to on multi-stop trips; add/edit/delete time-optional plan items. A
+  "Generate itinerary with AI" card drafts a full day-by-day plan
   (activities, named lunch/dinner spots, and at most one iconic
   "must-visit photo spot" for the whole trip) via Gemini
-  (`supabase/functions/generate-itinerary`), appended straight into the
-  same editable itinerary. Nothing is gated behind payment yet.
+  (`supabase/functions/generate-itinerary`), planned strictly around the
+  stops you actually listed — it can't invent its own cities — appended
+  straight into the same editable itinerary. Nothing is gated behind
+  payment yet.
 - **Budget** (`src/Budget.jsx`) — add/edit/delete expenses in any of ~25
   major world currencies, converted to the trip's own `home_currency`
   (picked at trip creation) instead of a hardcoded currency. Category
@@ -35,9 +43,9 @@ pairing codes).
 - **Currency converter** (`src/Converter.jsx`) — live FX rates (free,
   keyless API, cached offline), convert between any of the ~25 supported
   currencies, quick-reference table into the trip's home currency.
-- **Map** (`src/TripMap.jsx`) — Leaflet map centered on the trip's
-  destination; add extra pins by typing any place name (geocoded the same
-  way as the destination itself).
+- **Map** (`src/TripMap.jsx`) — Leaflet map with a pin per stop (connected
+  by a route line on multi-stop trips) plus extra pins addable by typing
+  any place name (geocoded the same way as a stop).
 - **Packing list** (`src/Packing.jsx`, `src/weather.js`) — climate-aware:
   fetches free weather data for the destination/dates (live forecast within
   16 days, otherwise a same-calendar-dates estimate from the past two

@@ -12,8 +12,10 @@ import {
   listAllTripsAsAdmin,
   generateItinerary,
 } from "./supabase";
+import { Plus, Trash2 } from "lucide-react";
 import { enumerateDates } from "./dates";
 import { geocodeDestination } from "./geocode";
+import { buildDatedStops, getEffectiveStops } from "./stops";
 import { isAdmin } from "./admin";
 import { CURRENCIES } from "./constants";
 import ItineraryTab from "./Itinerary";
@@ -122,26 +124,41 @@ function AuthScreen() {
 }
 
 function NewTripModal({ onClose, onCreated }) {
-  const [destination, setDestination] = useState("");
+  const [tripName, setTripName] = useState("");
   const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [stops, setStops] = useState([{ name: "", days: "3" }]);
   const [homeCurrency, setHomeCurrency] = useState("USD");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const updateStop = (i, field, value) => {
+    setStops((prev) => prev.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)));
+  };
+  const addStop = () => setStops((prev) => [...prev, { name: "", days: "2" }]);
+  const removeStop = (i) => setStops((prev) => prev.filter((_, idx) => idx !== i));
 
   const submit = async (e) => {
     e.preventDefault();
     setError("");
     setBusy(true);
     try {
-      const place = await geocodeDestination(destination);
+      const geocoded = [];
+      for (const s of stops) {
+        if (!s.name.trim()) continue;
+        const place = await geocodeDestination(s.name);
+        geocoded.push({ name: s.name, lat: place.lat, lng: place.lng, days: Math.max(1, parseInt(s.days, 10) || 1) });
+      }
+      if (!geocoded.length) throw new Error("Add at least one stop");
+      const dated = buildDatedStops(geocoded, startDate);
+      const endDate = dated[dated.length - 1].endDate;
       const trip = await createTrip({
-        destinationName: destination,
-        lat: place.lat,
-        lng: place.lng,
+        destinationName: tripName.trim() || geocoded.map((s) => s.name).join(" → "),
+        lat: dated[0].lat,
+        lng: dated[0].lng,
         startDate,
         endDate,
         homeCurrency,
+        stops: dated,
       });
       onCreated(trip);
     } catch (err) {
@@ -152,7 +169,7 @@ function NewTripModal({ onClose, onCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center px-4 z-50" style={{ background: "rgba(0,0,0,0.4)" }}>
+    <div className="fixed inset-0 flex items-center justify-center px-4 z-50 overflow-y-auto py-8" style={{ background: "rgba(0,0,0,0.4)" }}>
       <form
         onSubmit={submit}
         className="w-full max-w-sm p-6 rounded-2xl"
@@ -160,41 +177,65 @@ function NewTripModal({ onClose, onCreated }) {
       >
         <h2 className="text-lg font-bold mb-4" style={{ color: "var(--text-primary)" }}>New trip</h2>
 
-        <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Where to?</label>
+        <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Trip name</label>
         <input
-          required
-          placeholder="e.g. Bali, Indonesia"
-          value={destination}
-          onChange={(e) => setDestination(e.target.value)}
+          placeholder="e.g. Europe Trip"
+          value={tripName}
+          onChange={(e) => setTripName(e.target.value)}
           className="w-full mb-3 px-3 py-2 rounded-lg"
           style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
         />
 
-        <div className="flex gap-3 mb-4">
-          <div className="flex-1">
-            <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Start</label>
-            <input
-              type="date"
-              required
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg"
-              style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>End</label>
-            <input
-              type="date"
-              required
-              value={endDate}
-              min={startDate || undefined}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg"
-              style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
-            />
-          </div>
+        <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Start date</label>
+        <input
+          type="date"
+          required
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="w-full mb-4 px-3 py-2 rounded-lg"
+          style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+        />
+
+        <label className="block text-sm mb-2" style={{ color: "var(--text-tertiary)" }}>
+          Where are you going? Add each stop and how many days there.
+        </label>
+        <div className="space-y-2 mb-2">
+          {stops.map((s, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <input
+                required
+                placeholder={i === 0 ? "e.g. Athens" : "e.g. Paris"}
+                value={s.name}
+                onChange={(e) => updateStop(i, "name", e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg text-sm"
+                style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+              />
+              <input
+                type="number"
+                min="1"
+                required
+                value={s.days}
+                onChange={(e) => updateStop(i, "days", e.target.value)}
+                className="w-16 px-2 py-2 rounded-lg text-sm text-center"
+                style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+              />
+              <span className="text-xs shrink-0" style={{ color: "var(--text-muted)" }}>days</span>
+              {stops.length > 1 && (
+                <button type="button" onClick={() => removeStop(i)} style={{ color: "var(--stamp)" }}>
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+          ))}
         </div>
+        <button
+          type="button"
+          onClick={addStop}
+          className="flex items-center gap-1 text-sm mb-4"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          <Plus size={14} /> Add another stop
+        </button>
 
         <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Home currency (for budget totals)</label>
         <select
@@ -239,10 +280,10 @@ function AIGenerateCard({ trip, onGenerated }) {
     setBusy(true);
     setError("");
     try {
+      const effectiveStops = getEffectiveStops(trip);
+      const totalDays = enumerateDates(trip.start_date, trip.end_date).length;
       const result = await generateItinerary({
-        destinationName: trip.destination_name,
-        startDate: trip.start_date,
-        endDate: trip.end_date,
+        stops: effectiveStops.map((s) => ({ name: s.name, days: s.days || totalDays })),
       });
       const dates = enumerateDates(trip.start_date, trip.end_date);
       const newItems = [];
@@ -316,9 +357,15 @@ function TripHub({ tripId, onBack }) {
         ← My trips
       </button>
       <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>{trip.destination_name}</h1>
-      <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
+      <p className="text-sm mb-1" style={{ color: "var(--text-secondary)" }}>
         {trip.start_date} — {trip.end_date}
       </p>
+      {getEffectiveStops(trip).length > 1 && (
+        <p className="text-sm mb-4" style={{ color: "var(--text-tertiary)" }}>
+          {getEffectiveStops(trip).map((s) => `${s.name} (${s.days}d)`).join(" → ")}
+        </p>
+      )}
+      {getEffectiveStops(trip).length <= 1 && <div className="mb-4" />}
 
       <div className="flex gap-2 mb-5 overflow-x-auto">
         {TRIP_TABS.map((t) => (

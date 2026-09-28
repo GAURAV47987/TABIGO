@@ -40,7 +40,7 @@ export function onAuthStateChange(callback) {
 
 // --- Trips (one row per trip, owned by the signed-in user) --------------
 
-export async function createTrip({ destinationName, lat, lng, startDate, endDate, homeCurrency }) {
+export async function createTrip({ destinationName, lat, lng, startDate, endDate, homeCurrency, stops }) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -55,6 +55,7 @@ export async function createTrip({ destinationName, lat, lng, startDate, endDate
       start_date: startDate,
       end_date: endDate,
       home_currency: homeCurrency || "USD",
+      stops: stops || [],
       itinerary: [],
       budget: [],
       packing: {},
@@ -102,9 +103,9 @@ async function friendlyFunctionError(error) {
 // Deployed under the name "rapid-function" in Supabase (its creation
 // template's route stuck even after the function was renamed in the
 // dashboard), not "generate-itinerary" — this is its actual route.
-export async function generateItinerary({ destinationName, startDate, endDate }) {
+export async function generateItinerary({ stops }) {
   const { data, error } = await supabase.functions.invoke("rapid-function", {
-    body: { destinationName, startDate, endDate },
+    body: { stops },
   });
   if (error) throw await friendlyFunctionError(error);
   if (data?.error) throw new Error(data.error);

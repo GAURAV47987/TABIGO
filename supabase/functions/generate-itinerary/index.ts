@@ -19,13 +19,26 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function buildPrompt(destinationName: string, numDays: number) {
-  return `You are a travel-planning assistant. Create a day-by-day itinerary for a trip to ${destinationName}, lasting ${numDays} day(s).
+function buildPrompt(stops: { name: string; days: number }[]) {
+  let day = 1;
+  const stopLines = stops
+    .map((s) => {
+      const range = s.days > 1 ? `days ${day}-${day + s.days - 1}` : `day ${day}`;
+      day += s.days;
+      return `- ${s.name}: ${s.days} day(s) (${range})`;
+    })
+    .join("\n");
+  const numDays = day - 1;
 
-For each day, include:
+  return `You are a travel-planning assistant. This trip visits the following stops, IN THIS ORDER, on these exact days — do not add, remove, reorder, or substitute any stop:
+
+${stopLines}
+
+For EACH day, plan activities and food ONLY in that day's assigned stop (never a different city than the one listed for that day number). Include:
 - 2-3 activities or sights spread across the day (morning/afternoon), each with a suggested time (24h "HH:MM")
-- A lunch and a dinner recommendation, each naming an actual restaurant, dish, or food area where possible, with a suggested time
-- At most ONE genuinely iconic "must-visit photo spot" across the ENTIRE trip (not one per day) — a specific named location or restaurant famous for its view or photo opportunity, with a note on the best time of day to go and why it's worth it. Place it on whichever day makes the most geographic sense. Only include it at all if the destination actually has a well-known iconic spot; otherwise omit it.
+- A lunch and a dinner recommendation, each naming an actual restaurant, dish, or food area in that day's stop where possible, with a suggested time
+
+Across the ENTIRE trip, pick AT MOST ONE genuinely iconic "must-visit photo spot" (not one per day, not one per stop) — a specific named location or restaurant in one of the stops above, famous for its view or photo opportunity, with a note on the best time of day to go and why it's worth it. Place it on whichever day matches its stop. Only include it if one of the stops actually has a well-known iconic spot; otherwise omit it entirely.
 
 Respond with ONLY valid JSON, no markdown, no commentary, in exactly this shape:
 {"days":[{"day":1,"items":[{"time":"09:00","title":"...","notes":"...","type":"activity"}]}]}
@@ -74,15 +87,17 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const destinationName = String(body.destinationName || "").slice(0, 200);
-    const startDate = String(body.startDate || "");
-    const endDate = String(body.endDate || "");
-    if (!destinationName || !startDate || !endDate) throw new Error("Missing destination or dates");
+    const stops = Array.isArray(body.stops)
+      ? body.stops
+          .map((s: any) => ({ name: String(s?.name || "").slice(0, 200), days: Math.max(1, Math.round(Number(s?.days) || 1)) }))
+          .filter((s: any) => s.name)
+      : [];
+    if (!stops.length) throw new Error("Missing stops");
 
-    const numDays = Math.max(1, Math.round((Number(new Date(endDate)) - Number(new Date(startDate))) / 86400000) + 1);
-    if (numDays > 30) throw new Error("Trip too long for AI generation (max 30 days)");
+    const totalDays = stops.reduce((sum: number, s: any) => sum + s.days, 0);
+    if (totalDays > 30) throw new Error("Trip too long for AI generation (max 30 days)");
 
-    const raw = await callGemini(buildPrompt(destinationName, numDays));
+    const raw = await callGemini(buildPrompt(stops));
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed.days)) throw new Error("Unexpected response shape");
 
