@@ -5,6 +5,7 @@ import {
   signIn,
   signUp,
   signOut,
+  changePassword,
   createTrip,
   listTrips,
   getTrip,
@@ -13,7 +14,7 @@ import {
   listAllTripsAsAdmin,
   generateItinerary,
 } from "./supabase";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, User } from "lucide-react";
 import { enumerateDates } from "./dates";
 import { geocodeDestination } from "./geocode";
 import { searchPlaces } from "./geonames";
@@ -550,6 +551,110 @@ function AdminPanel({ onBack }) {
   );
 }
 
+function ProfilePanel({ session, onBack }) {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const memberSince = session.user.created_at
+    ? new Date(session.user.created_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
+    : null;
+
+  const submitPassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Passwords don't match");
+      return;
+    }
+    setBusy(true);
+    try {
+      await changePassword(newPassword);
+      setSuccess("Password updated");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setError(err.message || "Could not update password");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen px-4 py-6" style={{ background: "var(--bg)" }}>
+      <button onClick={onBack} className="mb-4 text-sm underline" style={{ color: "var(--text-secondary)" }}>
+        ← My trips
+      </button>
+      <h1 className="text-2xl font-bold mb-4" style={{ color: "var(--text-primary)" }}>Profile</h1>
+
+      <div className="p-4 rounded-2xl mb-4 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>Email</p>
+        <p className="font-medium mb-2" style={{ color: "var(--text-primary)" }}>{session.user.email}</p>
+        {memberSince && (
+          <>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Member since</p>
+            <p className="font-medium" style={{ color: "var(--text-primary)" }}>{memberSince}</p>
+          </>
+        )}
+      </div>
+
+      <div className="p-4 rounded-2xl mb-4 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>Plan</p>
+        <p className="font-medium" style={{ color: "var(--text-primary)" }}>Free</p>
+      </div>
+
+      <form onSubmit={submitPassword} className="p-4 rounded-2xl mb-4 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <p className="font-semibold mb-3" style={{ color: "var(--text-primary)" }}>Change password</p>
+
+        <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>New password</label>
+        <input
+          type="password"
+          required
+          minLength={6}
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="w-full mb-3 px-3 py-2 rounded-lg"
+          style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+        />
+
+        <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Confirm new password</label>
+        <input
+          type="password"
+          required
+          minLength={6}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className="w-full mb-3 px-3 py-2 rounded-lg"
+          style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+        />
+
+        {error && <p className="text-sm mb-3" style={{ color: "var(--stamp)" }}>{error}</p>}
+        {success && <p className="text-sm mb-3" style={{ color: "var(--text-primary)" }}>{success}</p>}
+
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
+          style={{ color: "var(--primary-text)" }}
+        >
+          {busy ? "Updating…" : "Update password"}
+        </button>
+      </form>
+
+      <button onClick={signOut} className="w-full py-2.5 rounded-lg font-semibold tg-btn" style={{ border: "1px solid var(--border)", color: "var(--stamp)", background: "var(--surface)" }}>
+        Sign out
+      </button>
+    </div>
+  );
+}
+
 function Dashboard({ session }) {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -557,6 +662,7 @@ function Dashboard({ session }) {
   const [showNewTrip, setShowNewTrip] = useState(false);
   const [openTripId, setOpenTripId] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -575,6 +681,10 @@ function Dashboard({ session }) {
     return <AdminPanel onBack={() => setShowAdmin(false)} />;
   }
 
+  if (showProfile) {
+    return <ProfilePanel session={session} onBack={() => setShowProfile(false)} />;
+  }
+
   if (openTripId) {
     return <TripHub tripId={openTripId} onBack={() => setOpenTripId(null)} />;
   }
@@ -589,8 +699,13 @@ function Dashboard({ session }) {
               Admin
             </button>
           )}
-          <button onClick={signOut} className="text-sm underline" style={{ color: "var(--text-secondary)" }}>
-            Sign out
+          <button
+            onClick={() => setShowProfile(true)}
+            aria-label="Profile"
+            className="p-2 rounded-full tg-btn"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+          >
+            <User size={16} />
           </button>
         </div>
       </div>

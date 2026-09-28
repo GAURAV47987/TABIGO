@@ -9,6 +9,11 @@ pairing codes).
 
 - **Real accounts** — email/password signup and sign-in via Supabase Auth
   (`src/supabase.js`), with email confirmation.
+- **Profile screen** — shows the signed-in email and member-since date, a
+  "Plan: Free" placeholder (the natural future home for subscription
+  status once payment gating exists), change-password, and Sign out
+  (moved here from a small header link). Open via the profile icon next
+  to Admin on the dashboard.
 - **Multi-trip, any-destination data model** — a `trips` table (one row per
   trip, owned by a `user_id`, gated by Row Level Security so a user can only
   ever see their own trips), instead of one hardcoded itinerary.
