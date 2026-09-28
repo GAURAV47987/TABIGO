@@ -66,9 +66,16 @@ export async function searchPlaces(query) {
     : `https://secure.geonames.org/searchJSON?name_startsWith=${encodeURIComponent(trimmed)}&featureClass=P&orderby=population&maxRows=8&username=${GEONAMES_USERNAME}`;
 
   const res = await fetch(url);
-  if (!res.ok) throw new Error("Place search failed");
-  const data = await res.json();
+  let data;
+  try {
+    data = await res.json();
+  } catch (e) {
+    throw new Error(`Place search failed (HTTP ${res.status})`);
+  }
+  // GeoNames puts account/rate-limit errors in the JSON body even on a
+  // 200 response, so check that before falling back to the HTTP status.
   if (data.status) throw new Error(data.status.message || "Place search failed");
+  if (!res.ok) throw new Error(`Place search failed (HTTP ${res.status})`);
 
   return (data.geonames || []).map((g) => ({
     name: g.name,
