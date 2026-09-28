@@ -9,6 +9,7 @@ import {
   listTrips,
   getTrip,
   updateTrip,
+  deleteTrip,
   listAllTripsAsAdmin,
   generateItinerary,
 } from "./supabase";
@@ -556,6 +557,8 @@ function Dashboard({ session }) {
   const [showNewTrip, setShowNewTrip] = useState(false);
   const [openTripId, setOpenTripId] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const refresh = () => {
     setLoading(true);
@@ -609,13 +612,25 @@ function Dashboard({ session }) {
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {trips.map((t) => (
-            <button key={t.id} onClick={() => setOpenTripId(t.id)} className="text-left rounded-2xl overflow-hidden tg-card">
+            <button key={t.id} onClick={() => setOpenTripId(t.id)} className="text-left rounded-2xl overflow-hidden tg-card relative">
               <PlaceBanner
                 placeName={photoQuery(t)}
                 savedUrl={t.photo_url}
                 onResolved={(url) => updateTrip(t.id, { photo_url: url })}
                 height={140}
               >
+                <span
+                  role="button"
+                  aria-label={`Delete ${t.destination_name}`}
+                  onClick={(evt) => {
+                    evt.stopPropagation();
+                    setDeleteTarget(t);
+                  }}
+                  className="absolute top-2 right-2 p-1.5 rounded-full"
+                  style={{ background: "rgba(0,0,0,0.45)", color: "white" }}
+                >
+                  <Trash2 size={14} />
+                </span>
                 <div className="absolute inset-0 flex flex-col justify-end p-3">
                   <p className="font-semibold text-sm leading-tight" style={{ color: "white" }}>{t.destination_name}</p>
                   <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
@@ -625,6 +640,47 @@ function Dashboard({ session }) {
               </PlaceBanner>
             </button>
           ))}
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 flex items-center justify-center px-4 z-50" style={{ background: "rgba(0,0,0,0.4)" }}>
+          <div className="w-full max-w-sm p-6 rounded-2xl tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <h2 className="text-lg font-bold mb-2" style={{ color: "var(--text-primary)" }}>Delete this trip?</h2>
+            <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
+              "{deleteTarget.destination_name}" and everything in it — itinerary, budget, packing list — will be
+              permanently deleted. This can't be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-lg font-semibold tg-btn"
+                style={{ border: "1px solid var(--border)", color: "var(--text-body)", background: "var(--surface)" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setDeleting(true);
+                  try {
+                    await deleteTrip(deleteTarget.id);
+                    setDeleteTarget(null);
+                    refresh();
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-lg font-semibold tg-btn tg-btn-stamp"
+                style={{ color: "white" }}
+              >
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
