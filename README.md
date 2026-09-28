@@ -56,7 +56,9 @@ pairing codes).
   (`supabase/functions/generate-itinerary`), planned strictly around the
   stops you actually listed — it can't invent its own cities — appended
   straight into the same editable itinerary. Nothing is gated behind
-  payment yet.
+  payment yet. Each plan item can optionally have a Location (geocoded
+  via Nominatim on save) — items with one show a small pin icon and
+  appear on the Map, connected by a route line in chronological order.
 - **Budget** (`src/Budget.jsx`) — add/edit/delete expenses in any of ~25
   major world currencies, converted to the trip's own `home_currency`
   (picked at trip creation) instead of a hardcoded currency. Category
@@ -64,9 +66,12 @@ pairing codes).
 - **Currency converter** (`src/Converter.jsx`) — live FX rates (free,
   keyless API, cached offline), convert between any of the ~25 supported
   currencies, quick-reference table into the trip's home currency.
-- **Map** (`src/TripMap.jsx`) — Leaflet map with a pin per stop (connected
-  by a route line on multi-stop trips) plus extra pins addable by typing
-  any place name (geocoded the same way as a stop).
+- **Map** (`src/TripMap.jsx`) — Leaflet map with three kinds of pins, each
+  its own color with a legend: stops (red, connected by a route line on
+  multi-stop trips), itinerary plan items that have a Location set (gold,
+  connected in chronological order — so building out the itinerary
+  actually draws the day-by-day route), and pins you add directly by
+  typing any place name (blue, geocoded the same way as a stop).
 - **Packing list** (`src/Packing.jsx`, `src/weather.js`) — climate-aware:
   fetches free weather data for the destination/dates (live forecast within
   16 days, otherwise a same-calendar-dates estimate from the past two

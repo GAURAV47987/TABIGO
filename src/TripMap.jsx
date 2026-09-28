@@ -25,6 +25,12 @@ export default function TripMap({ trip, onSave }) {
 
   const stops = getEffectiveStops(trip);
 
+  // Itinerary items that have their own pinned location, in chronological
+  // order, so the route line traces the day-by-day plan across the trip.
+  const itineraryStops = (trip.itinerary || [])
+    .filter((it) => it.lat != null && it.lng != null)
+    .sort((a, b) => (a.date + (a.time || "99:99")).localeCompare(b.date + (b.time || "99:99")));
+
   useEffect(() => {
     if (!containerRef.current || !trip.destination_lat) return;
 
@@ -42,30 +48,50 @@ export default function TripMap({ trip, onSave }) {
 
     requestAnimationFrame(() => map.invalidateSize());
 
+    const boundsPoints = [];
+
     if (stops.length > 1) {
       stops.forEach((stop, i) => {
         L.marker([stop.lat, stop.lng], { icon: pinIcon("#B23A2E") })
           .addTo(map)
           .bindPopup(`<strong>${i + 1}. ${stop.name}</strong><br>${stop.days} day(s)`);
+        boundsPoints.push([stop.lat, stop.lng]);
       });
       L.polyline(stops.map((s) => [s.lat, s.lng]), { color: "#B23A2E", weight: 2, dashArray: "6 6" }).addTo(map);
-      map.fitBounds(stops.map((s) => [s.lat, s.lng]), { padding: [30, 30] });
     } else {
       L.marker([trip.destination_lat, trip.destination_lng], { icon: pinIcon("#B23A2E") })
         .addTo(map)
         .bindPopup(`<strong>${trip.destination_name}</strong>`);
+      boundsPoints.push([trip.destination_lat, trip.destination_lng]);
     }
 
     pins.forEach((pin) => {
       L.marker([pin.lat, pin.lng], { icon: pinIcon("#2C5F7C") }).addTo(map).bindPopup(`<strong>${pin.name}</strong>`);
+      boundsPoints.push([pin.lat, pin.lng]);
     });
+
+    // Itinerary items — a day-by-day route, distinct gold color from
+    // stops (red) and custom pins (blue).
+    itineraryStops.forEach((item, i) => {
+      L.marker([item.lat, item.lng], { icon: pinIcon("#C9A227") })
+        .addTo(map)
+        .bindPopup(`<strong>${i + 1}. ${item.title}</strong>${item.time ? `<br>${item.time}` : ""}`);
+      boundsPoints.push([item.lat, item.lng]);
+    });
+    if (itineraryStops.length > 1) {
+      L.polyline(itineraryStops.map((it) => [it.lat, it.lng]), { color: "#C9A227", weight: 2 }).addTo(map);
+    }
+
+    if (boundsPoints.length > 1) {
+      map.fitBounds(boundsPoints, { padding: [30, 30] });
+    }
 
     return () => {
       map.remove();
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trip.destination_lat, trip.destination_lng, stops.length, pins.length]);
+  }, [trip.destination_lat, trip.destination_lng, stops.length, pins.length, itineraryStops.length]);
 
   const addPin = async (e) => {
     e.preventDefault();
@@ -88,6 +114,27 @@ export default function TripMap({ trip, onSave }) {
   return (
     <div>
       <div ref={containerRef} className="relative isolate w-full h-72 rounded-xl overflow-hidden mb-3 tg-card" style={{ border: "1px solid var(--border)" }} />
+
+      {(itineraryStops.length > 0 || pins.length > 0) && (
+        <div className="flex flex-wrap gap-3 mb-3">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: "#B23A2E" }} />
+            <span className="text-xs" style={{ color: "var(--text-secondary)" }}>Stops</span>
+          </div>
+          {itineraryStops.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: "#C9A227" }} />
+              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>Itinerary plan</span>
+            </div>
+          )}
+          {pins.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: "#2C5F7C" }} />
+              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>Your pins</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <button
         onClick={() => setShowAdd(true)}

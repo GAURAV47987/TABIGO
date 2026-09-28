@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Camera, Utensils } from "lucide-react";
+import { Camera, MapPin, Utensils } from "lucide-react";
 import { enumerateDates } from "./dates";
+import { geocodeDestination } from "./geocode";
 import { getEffectiveStops, getStopForDate } from "./stops";
 
 const TYPE_ICON = {
@@ -19,11 +20,41 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
   const [time, setTime] = useState(initial?.time || "");
   const [title, setTitle] = useState(initial?.title || "");
   const [notes, setNotes] = useState(initial?.notes || "");
+  const [location, setLocation] = useState(initial?.location || "");
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeError, setGeocodeError] = useState("");
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onSave({ id: initial?.id, date, time, title: title.trim(), notes: notes.trim() });
+    const trimmedLocation = location.trim();
+    let lat = initial?.lat ?? null;
+    let lng = initial?.lng ?? null;
+
+    // Only re-geocode when the location text actually changed, so editing
+    // just the time/notes on an already-pinned item doesn't cost a lookup.
+    if (trimmedLocation !== (initial?.location || "")) {
+      if (!trimmedLocation) {
+        lat = null;
+        lng = null;
+      } else {
+        setGeocoding(true);
+        setGeocodeError("");
+        try {
+          const place = await geocodeDestination(trimmedLocation);
+          lat = place.lat;
+          lng = place.lng;
+        } catch (err) {
+          lat = null;
+          lng = null;
+          setGeocodeError("Couldn't find that place — saved without a map pin.");
+        } finally {
+          setGeocoding(false);
+        }
+      }
+    }
+
+    onSave({ id: initial?.id, date, time, title: title.trim(), notes: notes.trim(), location: trimmedLocation, lat, lng });
   };
 
   return (
@@ -62,14 +93,26 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
-          className="w-full mb-4 px-3 py-2 rounded-lg"
+          className="w-full mb-3 px-3 py-2 rounded-lg"
           style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
         />
+
+        <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Location (optional — drops a pin on the Map)</label>
+        <input
+          placeholder="e.g. Uluwatu Temple, Bali"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="w-full mb-1 px-3 py-2 rounded-lg"
+          style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+        />
+        {geocodeError && <p className="text-xs mb-3" style={{ color: "var(--stamp)" }}>{geocodeError}</p>}
+        {!geocodeError && <div className="mb-3" />}
 
         <div className="flex gap-2">
           <button
             type="button"
             onClick={onClose}
+            disabled={geocoding}
             className="flex-1 py-2.5 rounded-lg font-semibold tg-btn"
             style={{ border: "1px solid var(--border)", color: "var(--text-body)", background: "var(--surface)" }}
           >
@@ -77,10 +120,11 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
           </button>
           <button
             type="submit"
+            disabled={geocoding}
             className="flex-1 py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
             style={{ color: "var(--primary-text)" }}
           >
-            Save
+            {geocoding ? "Finding place…" : "Save"}
           </button>
         </div>
 
@@ -129,6 +173,7 @@ function DayCard({ date, dayNumber, stopName, items, onAdd, onEdit }) {
                 {TYPE_ICON[item.type]}
                 {item.time && <span className="font-semibold mr-1">{item.time}</span>}
                 {item.title}
+                {item.lat != null && <MapPin size={12} style={{ color: "var(--text-muted)" }} />}
               </p>
               {item.notes && <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>{item.notes}</p>}
             </button>
