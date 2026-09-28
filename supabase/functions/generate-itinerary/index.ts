@@ -1,8 +1,9 @@
 // TABIGO: Gemini-backed AI itinerary generator.
 //
-// Deploy via Supabase Dashboard -> Edge Functions -> Create a new function
-// named "generate-itinerary" -> paste this file as its index.ts -> Deploy.
-// Then set a secret: Edge Functions -> Secrets -> GEMINI_API_KEY
+// Deployed in Supabase as "rapid-function" (its actual route — see
+// src/supabase.js) even though its display name is "generate-itinerary";
+// the dashboard's creation template's slug stuck after renaming.
+// Set a secret: Edge Functions -> Secrets -> GEMINI_API_KEY
 // (from https://aistudio.google.com/apikey).
 
 import { createClient } from "npm:@supabase/supabase-js@2";

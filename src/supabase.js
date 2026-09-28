@@ -99,8 +99,11 @@ async function friendlyFunctionError(error) {
   return error;
 }
 
+// Deployed under the name "rapid-function" in Supabase (its creation
+// template's route stuck even after the function was renamed in the
+// dashboard), not "generate-itinerary" — this is its actual route.
 export async function generateItinerary({ destinationName, startDate, endDate }) {
-  const { data, error } = await supabase.functions.invoke("generate-itinerary", {
+  const { data, error } = await supabase.functions.invoke("rapid-function", {
     body: { destinationName, startDate, endDate },
   });
   if (error) throw await friendlyFunctionError(error);
