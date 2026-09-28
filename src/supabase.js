@@ -72,6 +72,16 @@ export async function listTrips() {
   return data;
 }
 
+// Admin-only: every trip from every user, with the owner's email. The
+// admin_list_trips function checks the caller's email server-side before
+// returning anything, so this call fails for anyone else regardless of
+// what the client sends.
+export async function listAllTripsAsAdmin() {
+  const { data, error } = await supabase.rpc("admin_list_trips");
+  if (error) throw error;
+  return data;
+}
+
 export async function getTrip(id) {
   const { data, error } = await supabase.from("trips").select("*").eq("id", id).single();
   if (error) throw error;

@@ -8,8 +8,10 @@ import {
   createTrip,
   listTrips,
   getTrip,
+  listAllTripsAsAdmin,
 } from "./supabase";
 import { geocodeDestination } from "./geocode";
+import { isAdmin } from "./admin";
 
 function AuthScreen() {
   const [mode, setMode] = useState("signin");
@@ -236,11 +238,51 @@ function TripHub({ tripId, onBack }) {
   );
 }
 
+function AdminPanel({ onBack }) {
+  const [rows, setRows] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    listAllTripsAsAdmin()
+      .then(setRows)
+      .catch((err) => setError(err.message || "Could not load admin data"));
+  }, []);
+
+  return (
+    <div className="min-h-screen px-4 py-6" style={{ background: "var(--bg)" }}>
+      <button onClick={onBack} className="mb-4 text-sm underline" style={{ color: "var(--text-secondary)" }}>
+        ← My trips
+      </button>
+      <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>Admin: all trips</h1>
+      <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>Every trip, every user.</p>
+
+      {error && <p style={{ color: "var(--stamp)" }}>{error}</p>}
+      {!error && rows === null && <p style={{ color: "var(--text-body)" }}>Loading…</p>}
+      {rows && rows.length === 0 && <p style={{ color: "var(--text-secondary)" }}>No trips created yet.</p>}
+
+      {rows && rows.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {rows.map((t) => (
+            <div key={t.id} className="p-4 rounded-2xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{t.destination_name}</p>
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                {t.start_date} — {t.end_date}
+              </p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-tertiary)" }}>{t.user_email}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Dashboard({ session }) {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNewTrip, setShowNewTrip] = useState(false);
   const [openTripId, setOpenTripId] = useState(null);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   const refresh = () => {
     setLoading(true);
@@ -251,6 +293,10 @@ function Dashboard({ session }) {
 
   useEffect(refresh, []);
 
+  if (showAdmin) {
+    return <AdminPanel onBack={() => setShowAdmin(false)} />;
+  }
+
   if (openTripId) {
     return <TripHub tripId={openTripId} onBack={() => setOpenTripId(null)} />;
   }
@@ -259,9 +305,16 @@ function Dashboard({ session }) {
     <div className="min-h-screen px-4 py-6" style={{ background: "var(--bg)" }}>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>TABIGO</h1>
-        <button onClick={signOut} className="text-sm underline" style={{ color: "var(--text-secondary)" }}>
-          Sign out
-        </button>
+        <div className="flex items-center gap-4">
+          {isAdmin(session) && (
+            <button onClick={() => setShowAdmin(true)} className="text-sm underline" style={{ color: "var(--stamp)" }}>
+              Admin
+            </button>
+          )}
+          <button onClick={signOut} className="text-sm underline" style={{ color: "var(--text-secondary)" }}>
+            Sign out
+          </button>
+        </div>
       </div>
 
       <button

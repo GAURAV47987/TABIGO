@@ -21,6 +21,12 @@ pairing codes).
   accents, light/dark mode tokens.
 - **Trip Hub** — placeholder screen after creating/opening a trip; this is
   where Itinerary, Budget, Maps, Packing, etc. get ported in next.
+- **Admin/developer account** — the email in `src/admin.js` (`isAdmin`) sees
+  an "Admin" link that lists every trip from every user (via the
+  `admin_list_trips` Postgres function, `supabase/admin.sql`), and is meant
+  to be the account that never hits future free-tier limits — nothing is
+  gated yet, but any paywall/limit logic added later should check `isAdmin`
+  first and skip it for this account.
 
 ## Not built yet (next steps)
 
