@@ -127,23 +127,31 @@ function AuthScreen() {
 function PlaceAutocomplete({ value, onChange, onPick, placeholder }) {
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const timerRef = useRef(null);
 
   const handleInput = (text) => {
     onChange(text);
     clearTimeout(timerRef.current);
+    setError("");
     if (text.trim().length < 2) {
       setSuggestions([]);
       setOpen(false);
       return;
     }
     timerRef.current = setTimeout(async () => {
+      setLoading(true);
       try {
         const results = await searchPlaces(text);
         setSuggestions(results);
         setOpen(true);
+        if (!results.length) setError("No matches found for that search.");
       } catch (err) {
         setSuggestions([]);
+        setError(err.message || "Place search failed");
+      } finally {
+        setLoading(false);
       }
     }, 300);
   };
@@ -160,6 +168,12 @@ function PlaceAutocomplete({ value, onChange, onPick, placeholder }) {
         className="w-full px-3 py-2 rounded-lg text-sm"
         style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
       />
+      {loading && (
+        <p className="absolute text-xs mt-1" style={{ color: "var(--text-muted)" }}>Searching…</p>
+      )}
+      {!loading && error && (
+        <p className="absolute text-xs mt-1" style={{ color: "var(--stamp)" }}>{error}</p>
+      )}
       {open && suggestions.length > 0 && (
         <div
           className="absolute z-10 left-0 right-0 mt-1 rounded-lg max-h-48 overflow-y-auto"
