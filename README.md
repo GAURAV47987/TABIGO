@@ -23,8 +23,11 @@ pairing codes).
   each trip.
 - **Itinerary** (`src/Itinerary.jsx`) — one day card per day of the trip,
   auto-generated from its dates; add/edit/delete time-optional plan items.
-  A disabled "Generate with AI" card is the placeholder for the future
-  paid AI-drafted itinerary.
+  A "Generate itinerary with AI" card drafts a full day-by-day plan
+  (activities, named lunch/dinner spots, and at most one iconic
+  "must-visit photo spot" for the whole trip) via Gemini
+  (`supabase/functions/generate-itinerary`), appended straight into the
+  same editable itinerary. Nothing is gated behind payment yet.
 - **Budget** (`src/Budget.jsx`) — add/edit/delete expenses in any of ~25
   major world currencies, converted to the trip's own `home_currency`
   (picked at trip creation) instead of a hardcoded currency. Category
@@ -50,9 +53,9 @@ pairing codes).
 
 ## Not built yet (next steps)
 
-- AI-generated draft itinerary (Groq-backed, paid feature)
 - AI receipt-scan / voice smart-add for Budget (paid feature)
-- Payment/subscription gating (Stripe)
+- Payment/subscription gating (Stripe) — including gating the AI itinerary
+  generator, which currently anyone can use for free
 - Dark mode toggle, force-refresh button (PWA update UX)
 
 The Supabase project URL and publishable ("anon") key are hardcoded in

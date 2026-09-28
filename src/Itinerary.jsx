@@ -1,5 +1,11 @@
 import { useState } from "react";
+import { Camera, Utensils } from "lucide-react";
 import { enumerateDates } from "./dates";
+
+const TYPE_ICON = {
+  photo: <Camera size={14} style={{ color: "var(--stamp)" }} />,
+  food: <Utensils size={14} style={{ color: "var(--text-secondary)" }} />,
+};
 
 function formatDay(dateStr, dayNumber) {
   const d = new Date(dateStr + "T00:00:00");
@@ -115,8 +121,9 @@ function DayCard({ date, dayNumber, items, onAdd, onEdit }) {
               className="text-left px-3 py-2 rounded-lg"
               style={{ background: "var(--bg)" }}
             >
-              <p style={{ color: "var(--text-body)" }}>
-                {item.time && <span className="font-semibold mr-2">{item.time}</span>}
+              <p className="flex items-center gap-1.5" style={{ color: "var(--text-body)" }}>
+                {TYPE_ICON[item.type]}
+                {item.time && <span className="font-semibold mr-1">{item.time}</span>}
                 {item.title}
               </p>
               {item.notes && <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>{item.notes}</p>}

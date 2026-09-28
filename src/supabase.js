@@ -91,6 +91,23 @@ export async function getTrip(id) {
   return data;
 }
 
+async function friendlyFunctionError(error) {
+  try {
+    const body = await error?.context?.json();
+    if (body?.error) return new Error(body.error);
+  } catch (e) {}
+  return error;
+}
+
+export async function generateItinerary({ destinationName, startDate, endDate }) {
+  const { data, error } = await supabase.functions.invoke("generate-itinerary", {
+    body: { destinationName, startDate, endDate },
+  });
+  if (error) throw await friendlyFunctionError(error);
+  if (data?.error) throw new Error(data.error);
+  return data; // { days: [{ day, items: [{ time, title, notes, type }] }] }
+}
+
 export async function updateTrip(id, fields) {
   const { error } = await supabase
     .from("trips")

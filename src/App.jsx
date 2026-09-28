@@ -10,7 +10,9 @@ import {
   getTrip,
   updateTrip,
   listAllTripsAsAdmin,
+  generateItinerary,
 } from "./supabase";
+import { enumerateDates } from "./dates";
 import { geocodeDestination } from "./geocode";
 import { isAdmin } from "./admin";
 import { CURRENCIES } from "./constants";
@@ -229,15 +231,57 @@ function NewTripModal({ onClose, onCreated }) {
   );
 }
 
-function AIGenerateCard() {
+function AIGenerateCard({ trip, onGenerated }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const generate = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await generateItinerary({
+        destinationName: trip.destination_name,
+        startDate: trip.start_date,
+        endDate: trip.end_date,
+      });
+      const dates = enumerateDates(trip.start_date, trip.end_date);
+      const newItems = [];
+      (result.days || []).forEach((day) => {
+        const date = dates[day.day - 1];
+        if (!date) return;
+        (day.items || []).forEach((item) => {
+          newItems.push({
+            id: crypto.randomUUID(),
+            date,
+            time: item.time || "",
+            title: item.title || "",
+            notes: item.notes || "",
+            type: item.type || "activity",
+          });
+        });
+      });
+      onGenerated(newItems);
+    } catch (err) {
+      setError(err.message || "Could not generate itinerary");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="p-4 rounded-2xl mb-4" style={{ background: "var(--surface)", border: "1px dashed var(--tape)" }}>
       <p className="font-semibold mb-1" style={{ color: "var(--text-primary)" }}>✨ Generate itinerary with AI</p>
       <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>
-        Draft a full day-by-day plan for this trip automatically — coming very soon.
+        Draft a full day-by-day plan for this trip automatically, including a must-visit photo spot.
       </p>
-      <button disabled className="w-full py-2.5 rounded-lg font-semibold opacity-50 cursor-not-allowed" style={{ background: "var(--primary-bg)", color: "var(--primary-text)" }}>
-        Generate itinerary
+      {error && <p className="text-sm mb-3" style={{ color: "var(--stamp)" }}>{error}</p>}
+      <button
+        onClick={generate}
+        disabled={busy}
+        className="w-full py-2.5 rounded-lg font-semibold"
+        style={{ background: "var(--primary-bg)", color: "var(--primary-text)", opacity: busy ? 0.6 : 1 }}
+      >
+        {busy ? "Generating…" : "Generate itinerary"}
       </button>
     </div>
   );
@@ -293,7 +337,18 @@ function TripHub({ tripId, onBack }) {
         ))}
       </div>
 
-      {tab === "itinerary" && <ItineraryTab trip={trip} onSave={save("itinerary")} aiSlot={<AIGenerateCard />} />}
+      {tab === "itinerary" && (
+        <ItineraryTab
+          trip={trip}
+          onSave={save("itinerary")}
+          aiSlot={
+            <AIGenerateCard
+              trip={trip}
+              onGenerated={(newItems) => save("itinerary")([...(trip.itinerary || []), ...newItems])}
+            />
+          }
+        />
+      )}
       {tab === "budget" && <BudgetTab trip={trip} onSave={save("budget")} />}
       {tab === "convert" && <ConverterTab homeCurrency={trip.home_currency || "USD"} />}
       {tab === "map" && <TripMap trip={trip} onSave={save("map_pins")} />}
