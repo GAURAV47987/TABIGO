@@ -24,6 +24,13 @@ import BudgetTab from "./Budget";
 import ConverterTab from "./Converter";
 import PackingTab from "./Packing";
 import TripMap from "./TripMap";
+import { PlaceBanner } from "./PlacePhoto";
+
+// A joined multi-stop label ("Athens → Paris") won't resolve to any one
+// Wikipedia page, so photos always key off the first stop's plain name.
+function photoQuery(trip) {
+  return getEffectiveStops(trip)[0]?.name || trip.destination_name;
+}
 
 function AuthScreen() {
   const [mode, setMode] = useState("signin");
@@ -442,16 +449,20 @@ function TripHub({ tripId, onBack }) {
       <button onClick={onBack} className="mb-4 text-sm underline" style={{ color: "var(--text-secondary)" }}>
         ← My trips
       </button>
-      <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>{trip.destination_name}</h1>
-      <p className="text-sm mb-1" style={{ color: "var(--text-secondary)" }}>
-        {trip.start_date} — {trip.end_date}
-      </p>
-      {getEffectiveStops(trip).length > 1 && (
-        <p className="text-sm mb-4" style={{ color: "var(--text-tertiary)" }}>
-          {getEffectiveStops(trip).map((s) => `${s.name} (${s.days}d)`).join(" → ")}
-        </p>
-      )}
-      {getEffectiveStops(trip).length <= 1 && <div className="mb-4" />}
+
+      <PlaceBanner placeName={photoQuery(trip)} height={160} className="rounded-2xl mb-4 tg-card">
+        <div className="absolute inset-0 flex flex-col justify-end p-4">
+          <h1 className="text-2xl font-bold" style={{ color: "white" }}>{trip.destination_name}</h1>
+          <p className="text-sm" style={{ color: "rgba(255,255,255,0.85)" }}>
+            {trip.start_date} — {trip.end_date}
+          </p>
+          {getEffectiveStops(trip).length > 1 && (
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.75)" }}>
+              {getEffectiveStops(trip).map((s) => `${s.name} (${s.days}d)`).join(" → ")}
+            </p>
+          )}
+        </div>
+      </PlaceBanner>
 
       <div className="flex gap-2 mb-5 overflow-x-auto">
         {TRIP_TABS.map((t) => (
@@ -584,16 +595,15 @@ function Dashboard({ session }) {
       ) : (
         <div className="flex flex-col gap-3">
           {trips.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setOpenTripId(t.id)}
-              className="text-left p-4 rounded-2xl tg-card"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-            >
-              <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{t.destination_name}</p>
-              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                {t.start_date} — {t.end_date}
-              </p>
+            <button key={t.id} onClick={() => setOpenTripId(t.id)} className="text-left rounded-2xl overflow-hidden tg-card">
+              <PlaceBanner placeName={photoQuery(t)} height={110}>
+                <div className="absolute inset-0 flex flex-col justify-end p-4">
+                  <p className="font-semibold" style={{ color: "white" }}>{t.destination_name}</p>
+                  <p className="text-sm" style={{ color: "rgba(255,255,255,0.85)" }}>
+                    {t.start_date} — {t.end_date}
+                  </p>
+                </div>
+              </PlaceBanner>
             </button>
           ))}
         </div>

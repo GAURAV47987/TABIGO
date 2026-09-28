@@ -28,6 +28,11 @@ pairing codes).
 - **Postcard Journal theme** — ported as-is from the personal app
   (`src/index.css`): kraft-paper background, ink-navy/stamp-red/tape-gold
   accents, light/dark mode tokens.
+- **Destination photos** (`src/photos.js`, `src/PlacePhoto.jsx`) — a real
+  photo of each trip's first stop as a banner on its dashboard card and
+  Trip Hub header, via Wikipedia's free, keyless image API (no developer
+  account needed, unlike Unsplash/Pexels); falls back to a themed gradient
+  while loading or when no photo exists for that name.
 - **Trip Hub** — tabbed view (Itinerary / Budget / Convert / Map / Pack) for
   each trip.
 - **Itinerary** (`src/Itinerary.jsx`) — one day card per day of the trip,
