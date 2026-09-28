@@ -35,8 +35,12 @@ pairing codes).
 - **Map** (`src/TripMap.jsx`) — Leaflet map centered on the trip's
   destination; add extra pins by typing any place name (geocoded the same
   way as the destination itself).
-- **Packing list** (`src/Packing.jsx`) — a general-purpose checklist with a
-  progress ring, not destination-specific (no weather/climate logic yet).
+- **Packing list** (`src/Packing.jsx`, `src/weather.js`) — climate-aware:
+  fetches free weather data for the destination/dates (live forecast within
+  16 days, otherwise a same-calendar-dates estimate from the past two
+  years) and shapes the clothing section around it (hot/cold/rainy),
+  instead of one fixed list for every trip. Progress ring, per-trip
+  checklist state.
 - **Admin/developer account** — the email in `src/admin.js` (`isAdmin`) sees
   an "Admin" link that lists every trip from every user (via the
   `admin_list_trips` Postgres function, `supabase/admin.sql`), and is meant
@@ -50,7 +54,6 @@ pairing codes).
 - AI receipt-scan / voice smart-add for Budget (paid feature)
 - Payment/subscription gating (Stripe)
 - Dark mode toggle, force-refresh button (PWA update UX)
-- Weather-aware packing suggestions (needs per-destination climate data)
 
 The Supabase project URL and publishable ("anon") key are hardcoded in
 `src/supabase.js`, same as the personal app — that key is meant to be
