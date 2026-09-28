@@ -6,6 +6,8 @@ import {
   signUp,
   signOut,
   changePassword,
+  getAvatarUrl,
+  uploadAvatar,
   createTrip,
   listTrips,
   getTrip,
@@ -557,6 +559,28 @@ function ProfilePanel({ session, onBack }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(() => getAvatarUrl(session.user.id));
+  const [avatarBroken, setAvatarBroken] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const fileInputRef = useRef(null);
+
+  const pickAvatar = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setAvatarError("");
+    setAvatarBusy(true);
+    try {
+      const url = await uploadAvatar(file);
+      setAvatarUrl(url);
+      setAvatarBroken(false);
+    } catch (err) {
+      setAvatarError(err.message || "Could not upload photo");
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
 
   const memberSince = session.user.created_at
     ? new Date(session.user.created_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
@@ -593,6 +617,41 @@ function ProfilePanel({ session, onBack }) {
         ← My trips
       </button>
       <h1 className="text-2xl font-bold mb-4" style={{ color: "var(--text-primary)" }}>Profile</h1>
+
+      <div className="flex flex-col items-center mb-4">
+        <div
+          className="relative rounded-full overflow-hidden mb-2 tg-card"
+          style={{ width: 96, height: 96, background: "var(--surface)", border: "1px solid var(--border)" }}
+        >
+          {!avatarBroken ? (
+            <img
+              src={avatarUrl}
+              alt="Profile"
+              className="w-full h-full object-cover"
+              onError={() => setAvatarBroken(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <User size={36} style={{ color: "var(--icon-empty)" }} />
+            </div>
+          )}
+          {avatarBusy && (
+            <div className="absolute inset-0 flex items-center justify-center text-xs" style={{ background: "rgba(0,0,0,0.4)", color: "white" }}>
+              Uploading…
+            </div>
+          )}
+        </div>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={pickAvatar} />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={avatarBusy}
+          className="text-sm underline"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          {avatarBroken ? "Add a photo" : "Change photo"}
+        </button>
+        {avatarError && <p className="text-sm mt-1" style={{ color: "var(--stamp)" }}>{avatarError}</p>}
+      </div>
 
       <div className="p-4 rounded-2xl mb-4 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>Email</p>

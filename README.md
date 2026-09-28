@@ -13,7 +13,12 @@ pairing codes).
   "Plan: Free" placeholder (the natural future home for subscription
   status once payment gating exists), change-password, and Sign out
   (moved here from a small header link). Open via the profile icon next
-  to Admin on the dashboard.
+  to Admin on the dashboard. Also lets you upload a profile photo (public
+  Supabase Storage bucket, `supabase/add_avatars_bucket.sql`) — the
+  object's filename is always your own user id, so re-uploading just
+  replaces it, and RLS-equivalent storage policies mean you can only ever
+  upload/replace/delete your own, while anyone can view any avatar (which
+  is fine — it's just a small photo, not sensitive data).
 - **Multi-trip, any-destination data model** — a `trips` table (one row per
   trip, owned by a `user_id`, gated by Row Level Security so a user can only
   ever see their own trips), instead of one hardcoded itinerary.

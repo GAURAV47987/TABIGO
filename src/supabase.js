@@ -29,6 +29,32 @@ export async function changePassword(newPassword) {
   if (error) throw error;
 }
 
+const AVATARS_BUCKET = "avatars";
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
+
+// The object's filename is always the user's own id, so re-uploading
+// replaces the old photo and the public URL never changes.
+export function getAvatarUrl(userId) {
+  const { data } = supabase.storage.from(AVATARS_BUCKET).getPublicUrl(userId);
+  // Cache-bust so a just-replaced photo doesn't show the browser's cached
+  // copy of the old one at the same URL.
+  return `${data.publicUrl}?t=${Date.now()}`;
+}
+
+export async function uploadAvatar(file) {
+  if (file.size > MAX_AVATAR_SIZE) throw new Error("Photo is too large (max 5MB)");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const { error } = await supabase.storage.from(AVATARS_BUCKET).upload(user.id, file, {
+    upsert: true,
+    contentType: file.type,
+  });
+  if (error) throw error;
+  return getAvatarUrl(user.id);
+}
+
 export async function getSession() {
   const {
     data: { session },
