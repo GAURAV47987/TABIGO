@@ -13,7 +13,12 @@ import {
 } from "./supabase";
 import { geocodeDestination } from "./geocode";
 import { isAdmin } from "./admin";
+import { CURRENCIES } from "./constants";
 import ItineraryTab from "./Itinerary";
+import BudgetTab from "./Budget";
+import ConverterTab from "./Converter";
+import PackingTab from "./Packing";
+import TripMap from "./TripMap";
 
 function AuthScreen() {
   const [mode, setMode] = useState("signin");
@@ -118,6 +123,7 @@ function NewTripModal({ onClose, onCreated }) {
   const [destination, setDestination] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [homeCurrency, setHomeCurrency] = useState("USD");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -133,6 +139,7 @@ function NewTripModal({ onClose, onCreated }) {
         lng: place.lng,
         startDate,
         endDate,
+        homeCurrency,
       });
       onCreated(trip);
     } catch (err) {
@@ -187,6 +194,16 @@ function NewTripModal({ onClose, onCreated }) {
           </div>
         </div>
 
+        <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Home currency (for budget totals)</label>
+        <select
+          value={homeCurrency}
+          onChange={(e) => setHomeCurrency(e.target.value)}
+          className="w-full mb-4 px-3 py-2 rounded-lg"
+          style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+        >
+          {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+
         {error && <p className="text-sm mb-3" style={{ color: "var(--stamp)" }}>{error}</p>}
 
         <div className="flex gap-2">
@@ -226,8 +243,17 @@ function AIGenerateCard() {
   );
 }
 
+const TRIP_TABS = [
+  { id: "itinerary", label: "Itinerary" },
+  { id: "budget", label: "Budget" },
+  { id: "convert", label: "Convert" },
+  { id: "map", label: "Map" },
+  { id: "pack", label: "Pack" },
+];
+
 function TripHub({ tripId, onBack }) {
   const [trip, setTrip] = useState(null);
+  const [tab, setTab] = useState("itinerary");
 
   useEffect(() => {
     getTrip(tripId).then(setTrip);
@@ -235,9 +261,9 @@ function TripHub({ tripId, onBack }) {
 
   if (!trip) return <p className="p-6" style={{ color: "var(--text-body)" }}>Loading…</p>;
 
-  const saveItinerary = (itinerary) => {
-    setTrip((t) => ({ ...t, itinerary }));
-    updateTrip(tripId, { itinerary });
+  const save = (field) => (value) => {
+    setTrip((t) => ({ ...t, [field]: value }));
+    updateTrip(tripId, { [field]: value });
   };
 
   return (
@@ -246,10 +272,32 @@ function TripHub({ tripId, onBack }) {
         ← My trips
       </button>
       <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>{trip.destination_name}</h1>
-      <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
+      <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
         {trip.start_date} — {trip.end_date}
       </p>
-      <ItineraryTab trip={trip} onSave={saveItinerary} aiSlot={<AIGenerateCard />} />
+
+      <div className="flex gap-2 mb-5 overflow-x-auto">
+        {TRIP_TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className="px-3 py-1.5 rounded-full text-sm font-medium shrink-0"
+            style={
+              tab === t.id
+                ? { background: "var(--primary-bg)", color: "var(--primary-text)" }
+                : { background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }
+            }
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "itinerary" && <ItineraryTab trip={trip} onSave={save("itinerary")} aiSlot={<AIGenerateCard />} />}
+      {tab === "budget" && <BudgetTab trip={trip} onSave={save("budget")} />}
+      {tab === "convert" && <ConverterTab homeCurrency={trip.home_currency || "USD"} />}
+      {tab === "map" && <TripMap trip={trip} onSave={save("map_pins")} />}
+      {tab === "pack" && <PackingTab trip={trip} onSave={save("packing")} />}
     </div>
   );
 }

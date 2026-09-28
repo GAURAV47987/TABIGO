@@ -40,7 +40,7 @@ export function onAuthStateChange(callback) {
 
 // --- Trips (one row per trip, owned by the signed-in user) --------------
 
-export async function createTrip({ destinationName, lat, lng, startDate, endDate }) {
+export async function createTrip({ destinationName, lat, lng, startDate, endDate, homeCurrency }) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -54,8 +54,11 @@ export async function createTrip({ destinationName, lat, lng, startDate, endDate
       destination_lng: lng,
       start_date: startDate,
       end_date: endDate,
+      home_currency: homeCurrency || "USD",
       itinerary: [],
       budget: [],
+      packing: {},
+      map_pins: [],
     })
     .select()
     .single();

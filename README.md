@@ -19,8 +19,24 @@ pairing codes).
 - **Postcard Journal theme** — ported as-is from the personal app
   (`src/index.css`): kraft-paper background, ink-navy/stamp-red/tape-gold
   accents, light/dark mode tokens.
-- **Trip Hub** — placeholder screen after creating/opening a trip; this is
-  where Itinerary, Budget, Maps, Packing, etc. get ported in next.
+- **Trip Hub** — tabbed view (Itinerary / Budget / Convert / Map / Pack) for
+  each trip.
+- **Itinerary** (`src/Itinerary.jsx`) — one day card per day of the trip,
+  auto-generated from its dates; add/edit/delete time-optional plan items.
+  A disabled "Generate with AI" card is the placeholder for the future
+  paid AI-drafted itinerary.
+- **Budget** (`src/Budget.jsx`) — add/edit/delete expenses in any of ~25
+  major world currencies, converted to the trip's own `home_currency`
+  (picked at trip creation) instead of a hardcoded currency. Category
+  breakdown chart, PDF export (jsPDF).
+- **Currency converter** (`src/Converter.jsx`) — live FX rates (free,
+  keyless API, cached offline), convert between any of the ~25 supported
+  currencies, quick-reference table into the trip's home currency.
+- **Map** (`src/TripMap.jsx`) — Leaflet map centered on the trip's
+  destination; add extra pins by typing any place name (geocoded the same
+  way as the destination itself).
+- **Packing list** (`src/Packing.jsx`) — a general-purpose checklist with a
+  progress ring, not destination-specific (no weather/climate logic yet).
 - **Admin/developer account** — the email in `src/admin.js` (`isAdmin`) sees
   an "Admin" link that lists every trip from every user (via the
   `admin_list_trips` Postgres function, `supabase/admin.sql`), and is meant
@@ -30,14 +46,11 @@ pairing codes).
 
 ## Not built yet (next steps)
 
-- Itinerary tab: manual day-by-day builder (free) + AI-generated draft
-  itinerary (paid)
-- Budget tracker (ported from the personal app, unlimited manual entries;
-  AI receipt-scan/smart-add capped on the free tier)
-- Currency converter, maps, packing list (ported, destination-agnostic
-  already)
+- AI-generated draft itinerary (Groq-backed, paid feature)
+- AI receipt-scan / voice smart-add for Budget (paid feature)
 - Payment/subscription gating (Stripe)
-- Dark mode toggle, PWA install support
+- Dark mode toggle, force-refresh button (PWA update UX)
+- Weather-aware packing suggestions (needs per-destination climate data)
 
 The Supabase project URL and publishable ("anon") key are hardcoded in
 `src/supabase.js`, same as the personal app — that key is meant to be
