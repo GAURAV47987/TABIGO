@@ -30,7 +30,7 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
     <div className="fixed inset-0 flex items-center justify-center px-4 z-50" style={{ background: "rgba(0,0,0,0.4)" }}>
       <form
         onSubmit={submit}
-        className="w-full max-w-sm p-6 rounded-2xl"
+        className="w-full max-w-sm p-6 rounded-2xl tg-card"
         style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
       >
         <h2 className="text-lg font-bold mb-4" style={{ color: "var(--text-primary)" }}>
@@ -70,15 +70,15 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg font-semibold"
-            style={{ border: "1px solid var(--border)", color: "var(--text-body)" }}
+            className="flex-1 py-2.5 rounded-lg font-semibold tg-btn"
+            style={{ border: "1px solid var(--border)", color: "var(--text-body)", background: "var(--surface)" }}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="flex-1 py-2.5 rounded-lg font-semibold"
-            style={{ background: "var(--primary-bg)", color: "var(--primary-text)" }}
+            className="flex-1 py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
+            style={{ color: "var(--primary-text)" }}
           >
             Save
           </button>
@@ -103,7 +103,7 @@ function DayCard({ date, dayNumber, stopName, items, onAdd, onEdit }) {
   const sorted = [...items].sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
 
   return (
-    <div className="p-4 rounded-2xl mb-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+    <div className="p-4 rounded-2xl mb-3 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
       <div className="flex items-center justify-between mb-2">
         <div>
           <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{formatDay(date, dayNumber)}</p>

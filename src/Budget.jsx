@@ -130,14 +130,14 @@ export default function BudgetTab({ trip, onSave }) {
           setEditingId(null);
           setShowForm(true);
         }}
-        className="w-full flex items-center justify-center gap-2 rounded-xl py-4 text-base font-bold mb-5"
-        style={{ background: "var(--stamp)", color: "white" }}
+        className="w-full flex items-center justify-center gap-2 rounded-xl py-4 text-base font-bold mb-5 tg-btn tg-btn-stamp"
+        style={{ color: "white" }}
       >
         <Plus size={20} strokeWidth={3} /> ADD EXPENSE
       </button>
 
       {Object.keys(totals).length > 0 && (
-        <div className="rounded-2xl p-4 mb-2.5" style={{ background: "var(--stamp)", color: "white" }}>
+        <div className="rounded-2xl p-4 mb-2.5 tg-card" style={{ background: "var(--stamp)", color: "white" }}>
           <div className="text-[11px] uppercase tracking-widest opacity-80">Total (≈ {homeCurrency})</div>
           <div className="text-3xl font-bold">{CURRENCY_SYMBOL[homeCurrency]}{totalHome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
           <div className="text-[11px] opacity-80 mt-0.5">Every currency below, converted at the latest rate</div>
@@ -151,7 +151,7 @@ export default function BudgetTab({ trip, onSave }) {
           </div>
         )}
         {Object.entries(totals).map(([cur, amt]) => (
-          <div key={cur} className="rounded-xl p-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <div key={cur} className="rounded-xl p-3 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
             <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>{cur} total</div>
             <div className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{CURRENCY_SYMBOL[cur]}{amt.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
           </div>
@@ -161,7 +161,7 @@ export default function BudgetTab({ trip, onSave }) {
       {budget.length > 0 && (
         <button
           onClick={exportPDF}
-          className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium mb-5"
+          className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium mb-5 tg-btn"
           style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
         >
           <Printer size={16} /> Export as PDF
@@ -170,7 +170,7 @@ export default function BudgetTab({ trip, onSave }) {
 
       {sortedCategories.length > 0 && (
         <Section icon={<Wallet size={15} />} title={`By category (≈ ${homeCurrency})`} accent="var(--text-primary)">
-          <div className="rounded-xl p-4 space-y-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <div className="rounded-xl p-4 space-y-3 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
             {sortedCategories.map((cat) => {
               const amt = categoryTotals[cat];
               const pct = maxCategoryTotal > 0 ? (amt / maxCategoryTotal) * 100 : 0;
@@ -215,7 +215,7 @@ export default function BudgetTab({ trip, onSave }) {
           <button
             key={e.id}
             onClick={() => openEdit(e)}
-            className="w-full text-left rounded-xl px-3 py-2.5 flex items-center justify-between"
+            className="w-full text-left rounded-xl px-3 py-2.5 flex items-center justify-between tg-card"
             style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
           >
             <div className="min-w-0">
@@ -243,7 +243,7 @@ export default function BudgetTab({ trip, onSave }) {
       {showForm && (
         <div className="fixed inset-0 flex items-center justify-center px-4 z-50" style={{ background: "rgba(0,0,0,0.4)" }} onClick={closeForm}>
           <div
-            className="w-full max-w-sm rounded-2xl p-5 space-y-3"
+            className="w-full max-w-sm rounded-2xl p-5 space-y-3 tg-card"
             style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -293,8 +293,8 @@ export default function BudgetTab({ trip, onSave }) {
 
             <button
               onClick={submit}
-              className="w-full rounded-lg py-2.5 text-sm font-medium mt-1"
-              style={{ background: "var(--primary-bg)", color: "var(--primary-text)" }}
+              className="w-full rounded-lg py-2.5 text-sm font-medium mt-1 tg-btn tg-btn-primary"
+              style={{ color: "var(--primary-text)" }}
             >
               {editingId ? "Save changes" : "Add expense"}
             </button>

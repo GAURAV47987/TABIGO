@@ -16,7 +16,7 @@ export function ChecklistRow({ checked, onClick, text, accent }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2 transition-transform active:scale-[0.98]"
+      className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2 tg-card"
       style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
     >
       {checked ? (

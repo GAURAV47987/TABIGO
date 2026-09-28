@@ -77,7 +77,7 @@ export default function ConverterTab({ homeCurrency }) {
       {errorDetail && <p className="text-[11px] mb-5" style={{ color: "var(--stamp)" }}>Fetch failed: {errorDetail}</p>}
       {!errorDetail && <div className="mb-4" />}
 
-      <div className="rounded-2xl p-4 mb-5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+      <div className="rounded-2xl p-4 mb-5 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
         <div className="flex items-end gap-2">
           <div className="flex-1">
             <label className="text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Amount</label>
@@ -101,7 +101,7 @@ export default function ConverterTab({ homeCurrency }) {
         </div>
 
         <div className="flex justify-center my-1">
-          <button onClick={swap} aria-label="Swap currencies" className="rounded-full p-2 mt-1" style={{ background: "var(--primary-bg)", color: "var(--primary-text)" }}>
+          <button onClick={swap} aria-label="Swap currencies" className="rounded-full p-2 mt-1 tg-btn tg-btn-primary" style={{ color: "var(--primary-text)" }}>
             <ArrowLeftRight size={14} />
           </button>
         </div>
@@ -137,7 +137,7 @@ export default function ConverterTab({ homeCurrency }) {
       <Section icon={<Wallet size={15} />} title={`Quick reference (→ ${homeCurrency})`} accent="var(--text-primary)">
         <div className="space-y-2">
           {otherCurrencies.slice(0, 8).map((cur) => (
-            <div key={cur} className="rounded-xl p-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div key={cur} className="rounded-xl p-3 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
               <div className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{cur}</div>
               <div className="grid grid-cols-4 gap-2">
                 {quickAmounts.map((amt) => {

@@ -54,7 +54,7 @@ function AuthScreen() {
   if (confirmSent) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg)" }}>
-        <div className="max-w-sm text-center p-6 rounded-2xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="max-w-sm text-center p-6 rounded-2xl tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <h1 className="text-xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>Check your email</h1>
           <p style={{ color: "var(--text-body)" }}>We sent a confirmation link to {email}. Click it, then come back and sign in.</p>
           <button
@@ -73,7 +73,7 @@ function AuthScreen() {
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg)" }}>
       <form
         onSubmit={submit}
-        className="w-full max-w-sm p-6 rounded-2xl"
+        className="w-full max-w-sm p-6 rounded-2xl tg-card"
         style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
       >
         <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>TABIGO</h1>
@@ -105,8 +105,8 @@ function AuthScreen() {
         <button
           type="submit"
           disabled={busy}
-          className="w-full py-2.5 rounded-lg font-semibold mb-3"
-          style={{ background: "var(--primary-bg)", color: "var(--primary-text)" }}
+          className="w-full py-2.5 rounded-lg font-semibold mb-3 tg-btn tg-btn-primary"
+          style={{ color: "var(--primary-text)" }}
         >
           {busy ? "Please wait…" : mode === "signup" ? "Sign up" : "Sign in"}
         </button>
@@ -176,7 +176,7 @@ function PlaceAutocomplete({ value, onChange, onPick, placeholder }) {
       )}
       {open && suggestions.length > 0 && (
         <div
-          className="absolute z-10 left-0 right-0 mt-1 rounded-lg max-h-48 overflow-y-auto"
+          className="absolute z-10 left-0 right-0 mt-1 rounded-lg max-h-48 overflow-y-auto tg-card"
           style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
         >
           {suggestions.map((s, i) => (
@@ -259,7 +259,7 @@ function NewTripModal({ onClose, onCreated }) {
     <div className="fixed inset-0 flex items-center justify-center px-4 z-50 overflow-y-auto py-8" style={{ background: "rgba(0,0,0,0.4)" }}>
       <form
         onSubmit={submit}
-        className="w-full max-w-sm p-6 rounded-2xl"
+        className="w-full max-w-sm p-6 rounded-2xl tg-card"
         style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
       >
         <h2 className="text-lg font-bold mb-4" style={{ color: "var(--text-primary)" }}>New trip</h2>
@@ -339,16 +339,16 @@ function NewTripModal({ onClose, onCreated }) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg font-semibold"
-            style={{ border: "1px solid var(--border)", color: "var(--text-body)" }}
+            className="flex-1 py-2.5 rounded-lg font-semibold tg-btn"
+            style={{ border: "1px solid var(--border)", color: "var(--text-body)", background: "var(--surface)" }}
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="flex-1 py-2.5 rounded-lg font-semibold"
-            style={{ background: "var(--primary-bg)", color: "var(--primary-text)" }}
+            className="flex-1 py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
+            style={{ color: "var(--primary-text)" }}
           >
             {busy ? "Creating…" : "Create trip"}
           </button>
@@ -396,7 +396,7 @@ function AIGenerateCard({ trip, onGenerated }) {
   };
 
   return (
-    <div className="p-4 rounded-2xl mb-4" style={{ background: "var(--surface)", border: "1px dashed var(--tape)" }}>
+    <div className="p-4 rounded-2xl mb-4 tg-card" style={{ background: "var(--surface)", border: "1px dashed var(--tape)" }}>
       <p className="font-semibold mb-1" style={{ color: "var(--text-primary)" }}>✨ Generate itinerary with AI</p>
       <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>
         Draft a full day-by-day plan for this trip automatically, including a must-visit photo spot.
@@ -405,8 +405,8 @@ function AIGenerateCard({ trip, onGenerated }) {
       <button
         onClick={generate}
         disabled={busy}
-        className="w-full py-2.5 rounded-lg font-semibold"
-        style={{ background: "var(--primary-bg)", color: "var(--primary-text)", opacity: busy ? 0.6 : 1 }}
+        className="w-full py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
+        style={{ color: "var(--primary-text)", opacity: busy ? 0.6 : 1 }}
       >
         {busy ? "Generating…" : "Generate itinerary"}
       </button>
@@ -458,10 +458,10 @@ function TripHub({ tripId, onBack }) {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className="px-3 py-1.5 rounded-full text-sm font-medium shrink-0"
+            className={`px-3 py-1.5 rounded-full text-sm font-medium shrink-0 tg-btn ${tab === t.id ? "tg-btn-primary" : ""}`}
             style={
               tab === t.id
-                ? { background: "var(--primary-bg)", color: "var(--primary-text)" }
+                ? { color: "var(--primary-text)" }
                 : { background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }
             }
           >
@@ -515,7 +515,7 @@ function AdminPanel({ onBack }) {
       {rows && rows.length > 0 && (
         <div className="flex flex-col gap-3">
           {rows.map((t) => (
-            <div key={t.id} className="p-4 rounded-2xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div key={t.id} className="p-4 rounded-2xl tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
               <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{t.destination_name}</p>
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
                 {t.start_date} — {t.end_date}
@@ -571,8 +571,8 @@ function Dashboard({ session }) {
 
       <button
         onClick={() => setShowNewTrip(true)}
-        className="w-full mb-6 py-3 rounded-xl font-semibold"
-        style={{ background: "var(--primary-bg)", color: "var(--primary-text)" }}
+        className="w-full mb-6 py-3 rounded-xl font-semibold tg-btn tg-btn-primary"
+        style={{ color: "var(--primary-text)" }}
       >
         + New trip
       </button>
@@ -587,7 +587,7 @@ function Dashboard({ session }) {
             <button
               key={t.id}
               onClick={() => setOpenTripId(t.id)}
-              className="text-left p-4 rounded-2xl"
+              className="text-left p-4 rounded-2xl tg-card"
               style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
             >
               <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{t.destination_name}</p>

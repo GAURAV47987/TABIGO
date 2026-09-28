@@ -73,3 +73,39 @@ body {
   background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 5%, transparent) 0 2px, transparent 2px 6px);
   transition: background-color 200ms ease;
 }
+
+/* Depth + tactility, applied across cards/buttons so the app doesn't read
+   as flat colored boxes. */
+.tg-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+button.tg-card:hover, a.tg-card:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+.tg-card:active {
+  transform: scale(0.99);
+}
+
+.tg-btn {
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+.tg-btn:hover {
+  filter: brightness(1.05);
+}
+.tg-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.tg-btn:disabled {
+  box-shadow: none;
+}
+
+.tg-btn-primary {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary-bg) 100%, white 12%), var(--primary-bg));
+}
+
+.tg-btn-stamp {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--stamp) 100%, white 15%), var(--stamp));
+}

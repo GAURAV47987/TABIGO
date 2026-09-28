@@ -87,11 +87,11 @@ export default function TripMap({ trip, onSave }) {
 
   return (
     <div>
-      <div ref={containerRef} className="relative isolate w-full h-72 rounded-xl overflow-hidden mb-3" style={{ border: "1px solid var(--border)" }} />
+      <div ref={containerRef} className="relative isolate w-full h-72 rounded-xl overflow-hidden mb-3 tg-card" style={{ border: "1px solid var(--border)" }} />
 
       <button
         onClick={() => setShowAdd(true)}
-        className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium mb-4"
+        className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium mb-4 tg-btn"
         style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
       >
         <Plus size={16} /> Add a place to the map
@@ -100,7 +100,7 @@ export default function TripMap({ trip, onSave }) {
       {pins.length > 0 && (
         <div className="space-y-2">
           {pins.map((p) => (
-            <div key={p.id} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div key={p.id} className="flex items-center justify-between rounded-lg px-3 py-2 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
               <span className="text-sm" style={{ color: "var(--text-body)" }}>{p.name}</span>
               <span role="button" onClick={() => removePin(p.id)} style={{ color: "var(--stamp)" }}>
                 <Trash2 size={15} />
@@ -112,7 +112,7 @@ export default function TripMap({ trip, onSave }) {
 
       {showAdd && (
         <div className="fixed inset-0 flex items-center justify-center px-4 z-50" style={{ background: "rgba(0,0,0,0.4)" }}>
-          <form onSubmit={addPin} className="w-full max-w-sm p-6 rounded-2xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <form onSubmit={addPin} className="w-full max-w-sm p-6 rounded-2xl tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
             <h2 className="text-lg font-bold mb-4" style={{ color: "var(--text-primary)" }}>Add a place</h2>
             <input
               required
@@ -125,10 +125,10 @@ export default function TripMap({ trip, onSave }) {
             />
             {error && <p className="text-sm mb-3" style={{ color: "var(--stamp)" }}>{error}</p>}
             <div className="flex gap-2">
-              <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg font-semibold" style={{ border: "1px solid var(--border)", color: "var(--text-body)" }}>
+              <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg font-semibold tg-btn" style={{ border: "1px solid var(--border)", color: "var(--text-body)", background: "var(--surface)" }}>
                 Cancel
               </button>
-              <button type="submit" disabled={busy} className="flex-1 py-2.5 rounded-lg font-semibold" style={{ background: "var(--primary-bg)", color: "var(--primary-text)" }}>
+              <button type="submit" disabled={busy} className="flex-1 py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary" style={{ color: "var(--primary-text)" }}>
                 {busy ? "Finding…" : "Add pin"}
               </button>
             </div>
