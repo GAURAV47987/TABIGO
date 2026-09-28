@@ -106,3 +106,17 @@ export async function searchPlaces(query) {
   );
   return results.map(toResult);
 }
+
+// For picking a decent photo-search term for a whole country ("Vietnam")
+// instead of the country name itself, which reads as too generic/broad
+// to reliably match a recognizable travel photo.
+export async function getTopCityForCountry(name) {
+  const code = matchCountryCode(name);
+  if (!code) return null;
+  try {
+    const cities = await geonamesFetch(`country=${code}&featureClass=P&orderby=population&maxRows=1`);
+    return cities[0]?.name || null;
+  } catch (e) {
+    return null;
+  }
+}

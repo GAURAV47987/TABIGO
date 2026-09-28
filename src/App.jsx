@@ -607,18 +607,18 @@ function Dashboard({ session }) {
       ) : trips.length === 0 ? (
         <p style={{ color: "var(--text-secondary)" }}>No trips yet — plan your first one above.</p>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {trips.map((t) => (
             <button key={t.id} onClick={() => setOpenTripId(t.id)} className="text-left rounded-2xl overflow-hidden tg-card">
               <PlaceBanner
                 placeName={photoQuery(t)}
                 savedUrl={t.photo_url}
                 onResolved={(url) => updateTrip(t.id, { photo_url: url })}
-                height={110}
+                height={140}
               >
-                <div className="absolute inset-0 flex flex-col justify-end p-4">
-                  <p className="font-semibold" style={{ color: "white" }}>{t.destination_name}</p>
-                  <p className="text-sm" style={{ color: "rgba(255,255,255,0.85)" }}>
+                <div className="absolute inset-0 flex flex-col justify-end p-3">
+                  <p className="font-semibold text-sm leading-tight" style={{ color: "white" }}>{t.destination_name}</p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
                     {t.start_date} — {t.end_date}
                   </p>
                 </div>
