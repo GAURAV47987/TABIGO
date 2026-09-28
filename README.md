@@ -14,13 +14,17 @@ pairing codes).
   ever see their own trips), instead of one hardcoded itinerary.
 - **New trip flow** — a trip is a sequence of one or more **stops**
   (`src/stops.js`): name each stop and how many days there, in order, and
-  the app sequences their dates automatically from the trip's start date
-  and geocodes each one for free via OpenStreetMap's Nominatim
-  (`src/geocode.js`). A single-stop trip works exactly like a single
-  destination; multi-stop trips (e.g. an Athens → Paris → Amsterdam Europe
-  trip) get a per-day city label in the Itinerary and a route line on the
-  Map. Older trips created before this existed still work — they're
-  treated as one implicit stop spanning their original dates.
+  the app sequences their dates automatically from the trip's start date.
+  Typing into a stop shows a live autocomplete dropdown (`src/geonames.js`,
+  GeoNames) — type a city for direct matches, or a whole country ("Japan")
+  to see its biggest cities sorted by population, and tap one instead of
+  typing blind; free-typed text with no pick falls back to geocoding via
+  OpenStreetMap's Nominatim (`src/geocode.js`) at submit time. A
+  single-stop trip works exactly like a single destination; multi-stop
+  trips (e.g. an Athens → Paris → Amsterdam Europe trip) get a per-day
+  city label in the Itinerary and a route line on the Map. Older trips
+  created before this existed still work — they're treated as one
+  implicit stop spanning their original dates.
 - **Postcard Journal theme** — ported as-is from the personal app
   (`src/index.css`): kraft-paper background, ink-navy/stamp-red/tape-gold
   accents, light/dark mode tokens.

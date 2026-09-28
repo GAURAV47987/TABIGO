@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getSession,
   onAuthStateChange,
@@ -15,6 +15,7 @@ import {
 import { Plus, Trash2 } from "lucide-react";
 import { enumerateDates } from "./dates";
 import { geocodeDestination } from "./geocode";
+import { searchPlaces } from "./geonames";
 import { buildDatedStops, getEffectiveStops } from "./stops";
 import { isAdmin } from "./admin";
 import { CURRENCIES } from "./constants";
@@ -123,6 +124,67 @@ function AuthScreen() {
   );
 }
 
+function PlaceAutocomplete({ value, onChange, onPick, placeholder }) {
+  const [suggestions, setSuggestions] = useState([]);
+  const [open, setOpen] = useState(false);
+  const timerRef = useRef(null);
+
+  const handleInput = (text) => {
+    onChange(text);
+    clearTimeout(timerRef.current);
+    if (text.trim().length < 2) {
+      setSuggestions([]);
+      setOpen(false);
+      return;
+    }
+    timerRef.current = setTimeout(async () => {
+      try {
+        const results = await searchPlaces(text);
+        setSuggestions(results);
+        setOpen(true);
+      } catch (err) {
+        setSuggestions([]);
+      }
+    }, 300);
+  };
+
+  return (
+    <div className="relative flex-1">
+      <input
+        required
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => handleInput(e.target.value)}
+        onFocus={() => suggestions.length > 0 && setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        className="w-full px-3 py-2 rounded-lg text-sm"
+        style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+      />
+      {open && suggestions.length > 0 && (
+        <div
+          className="absolute z-10 left-0 right-0 mt-1 rounded-lg max-h-48 overflow-y-auto"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+        >
+          {suggestions.map((s, i) => (
+            <button
+              type="button"
+              key={i}
+              onMouseDown={() => {
+                onPick(s);
+                setOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 text-sm"
+              style={{ color: "var(--text-body)", borderBottom: i < suggestions.length - 1 ? "1px solid var(--border)" : "none" }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NewTripModal({ onClose, onCreated }) {
   const [tripName, setTripName] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -133,6 +195,15 @@ function NewTripModal({ onClose, onCreated }) {
 
   const updateStop = (i, field, value) => {
     setStops((prev) => prev.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)));
+  };
+  // Typing after having picked a suggestion means the picked place no
+  // longer matches, so drop its coordinates until they pick again (or the
+  // submit-time geocoding fallback takes over).
+  const setStopName = (i, text) => {
+    setStops((prev) => prev.map((s, idx) => (idx === i ? { ...s, name: text, lat: null, lng: null } : s)));
+  };
+  const pickStopPlace = (i, place) => {
+    setStops((prev) => prev.map((s, idx) => (idx === i ? { ...s, name: place.name, lat: place.lat, lng: place.lng } : s)));
   };
   const addStop = () => setStops((prev) => [...prev, { name: "", days: "2" }]);
   const removeStop = (i) => setStops((prev) => prev.filter((_, idx) => idx !== i));
@@ -145,7 +216,9 @@ function NewTripModal({ onClose, onCreated }) {
       const geocoded = [];
       for (const s of stops) {
         if (!s.name.trim()) continue;
-        const place = await geocodeDestination(s.name);
+        // A picked suggestion already has coordinates; free-typed text
+        // (ignoring the dropdown) still falls back to geocoding it.
+        const place = s.lat != null && s.lng != null ? s : await geocodeDestination(s.name);
         geocoded.push({ name: s.name, lat: place.lat, lng: place.lng, days: Math.max(1, parseInt(s.days, 10) || 1) });
       }
       if (!geocoded.length) throw new Error("Add at least one stop");
@@ -197,18 +270,17 @@ function NewTripModal({ onClose, onCreated }) {
         />
 
         <label className="block text-sm mb-2" style={{ color: "var(--text-tertiary)" }}>
-          Where are you going? Add each stop and how many days there.
+          Where are you going? Type a city, or a whole country to see its
+          biggest cities — then add how many days at each stop.
         </label>
         <div className="space-y-2 mb-2">
           {stops.map((s, i) => (
             <div key={i} className="flex gap-2 items-center">
-              <input
-                required
-                placeholder={i === 0 ? "e.g. Athens" : "e.g. Paris"}
+              <PlaceAutocomplete
+                placeholder={i === 0 ? "e.g. Athens, or Japan" : "e.g. Paris"}
                 value={s.name}
-                onChange={(e) => updateStop(i, "name", e.target.value)}
-                className="flex-1 px-3 py-2 rounded-lg text-sm"
-                style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+                onChange={(text) => setStopName(i, text)}
+                onPick={(place) => pickStopPlace(i, place)}
               />
               <input
                 type="number"
