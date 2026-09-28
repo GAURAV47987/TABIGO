@@ -450,7 +450,16 @@ function TripHub({ tripId, onBack }) {
         ← My trips
       </button>
 
-      <PlaceBanner placeName={photoQuery(trip)} height={160} className="rounded-2xl mb-4 tg-card">
+      <PlaceBanner
+        placeName={photoQuery(trip)}
+        savedUrl={trip.photo_url}
+        onResolved={(url) => {
+          setTrip((t) => ({ ...t, photo_url: url }));
+          updateTrip(tripId, { photo_url: url });
+        }}
+        height={160}
+        className="rounded-2xl mb-4 tg-card"
+      >
         <div className="absolute inset-0 flex flex-col justify-end p-4">
           <h1 className="text-2xl font-bold" style={{ color: "white" }}>{trip.destination_name}</h1>
           <p className="text-sm" style={{ color: "rgba(255,255,255,0.85)" }}>
@@ -596,7 +605,12 @@ function Dashboard({ session }) {
         <div className="flex flex-col gap-3">
           {trips.map((t) => (
             <button key={t.id} onClick={() => setOpenTripId(t.id)} className="text-left rounded-2xl overflow-hidden tg-card">
-              <PlaceBanner placeName={photoQuery(t)} height={110}>
+              <PlaceBanner
+                placeName={photoQuery(t)}
+                savedUrl={t.photo_url}
+                onResolved={(url) => updateTrip(t.id, { photo_url: url })}
+                height={110}
+              >
                 <div className="absolute inset-0 flex flex-col justify-end p-4">
                   <p className="font-semibold" style={{ color: "white" }}>{t.destination_name}</p>
                   <p className="text-sm" style={{ color: "rgba(255,255,255,0.85)" }}>

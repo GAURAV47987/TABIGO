@@ -70,7 +70,7 @@ export async function createTrip({ destinationName, lat, lng, startDate, endDate
 export async function listTrips() {
   const { data, error } = await supabase
     .from("trips")
-    .select("id, destination_name, destination_lat, destination_lng, start_date, end_date, stops, created_at")
+    .select("id, destination_name, destination_lat, destination_lng, start_date, end_date, stops, photo_url, created_at")
     .order("start_date", { ascending: true });
   if (error) throw error;
   return data;

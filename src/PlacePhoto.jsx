@@ -1,21 +1,35 @@
 import { useEffect, useState } from "react";
 import { getPlacePhoto } from "./photos";
 
-// A photo banner for a place, falling back to a themed gradient while
-// loading or when no Wikipedia photo exists for that name.
-export function PlaceBanner({ placeName, height = 140, className = "", children }) {
-  const [url, setUrl] = useState(undefined); // undefined = loading, null = no photo found
+// A photo banner for a place. `savedUrl` is the trip's own persisted
+// photo_url: null means never looked up (look it up now and report back
+// via onResolved so the caller can save it forever), "" means already
+// looked up with nothing found (don't retry), and a string is the cached
+// photo to use directly — so a trip only ever costs one API call, ever.
+export function PlaceBanner({ placeName, savedUrl, onResolved, height = 140, className = "", children }) {
+  const [url, setUrl] = useState(savedUrl || null);
 
   useEffect(() => {
+    if (savedUrl) {
+      setUrl(savedUrl);
+      return;
+    }
+    if (savedUrl === "") {
+      setUrl(null);
+      return;
+    }
     let cancelled = false;
     setUrl(undefined);
-    getPlacePhoto(placeName).then((u) => {
-      if (!cancelled) setUrl(u);
+    getPlacePhoto(placeName).then((found) => {
+      if (cancelled) return;
+      setUrl(found);
+      onResolved?.(found || "");
     });
     return () => {
       cancelled = true;
     };
-  }, [placeName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placeName, savedUrl]);
 
   return (
     <div

@@ -30,9 +30,11 @@ pairing codes).
   accents, light/dark mode tokens.
 - **Destination photos** (`src/photos.js`, `src/PlacePhoto.jsx`) — a real
   photo of each trip's first stop as a banner on its dashboard card and
-  Trip Hub header, via Wikipedia's free, keyless image API (no developer
-  account needed, unlike Unsplash/Pexels); falls back to a themed gradient
-  while loading or when no photo exists for that name.
+  Trip Hub header, via the Pexels API. Looked up once per trip, ever: the
+  found photo (or the fact that none was found) is saved permanently to
+  that trip's own `photo_url` column, so re-opening or re-viewing a trip
+  never re-queries Pexels — only genuinely new trips do. Falls back to a
+  themed gradient while loading or when no photo exists for that name.
 - **Trip Hub** — tabbed view (Itinerary / Budget / Convert / Map / Pack) for
   each trip.
 - **Itinerary** (`src/Itinerary.jsx`) — one day card per day of the trip,
