@@ -552,14 +552,17 @@ function AdminPanel({ onBack }) {
 function Dashboard({ session }) {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [showNewTrip, setShowNewTrip] = useState(false);
   const [openTripId, setOpenTripId] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
 
   const refresh = () => {
     setLoading(true);
+    setLoadError("");
     listTrips()
       .then(setTrips)
+      .catch((err) => setLoadError(err.message || "Could not load your trips"))
       .finally(() => setLoading(false));
   };
 
@@ -599,6 +602,8 @@ function Dashboard({ session }) {
 
       {loading ? (
         <p style={{ color: "var(--text-body)" }}>Loading…</p>
+      ) : loadError ? (
+        <p style={{ color: "var(--stamp)" }}>Couldn't load your trips: {loadError}</p>
       ) : trips.length === 0 ? (
         <p style={{ color: "var(--text-secondary)" }}>No trips yet — plan your first one above.</p>
       ) : (
