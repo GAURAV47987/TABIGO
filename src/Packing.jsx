@@ -1,31 +1,53 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Luggage } from "lucide-react";
-import { PACKING_CATEGORIES } from "./constants";
+import { buildPackingCategories } from "./constants";
+import { getTripClimate } from "./weather";
 import { Section, ChecklistRow, ProgressRing } from "./ui";
 
 export default function PackingTab({ trip, onSave }) {
   const checklist = trip.packing || {};
+  const [climate, setClimate] = useState(undefined); // undefined = loading, null = unavailable
 
-  const totalItems = useMemo(() => PACKING_CATEGORIES.reduce((sum, cat) => sum + cat.items.length, 0), []);
+  useEffect(() => {
+    let cancelled = false;
+    setClimate(undefined);
+    getTripClimate(trip.destination_lat, trip.destination_lng, trip.start_date, trip.end_date)
+      .then((c) => !cancelled && setClimate(c))
+      .catch(() => !cancelled && setClimate(null));
+    return () => {
+      cancelled = true;
+    };
+  }, [trip.destination_lat, trip.destination_lng, trip.start_date, trip.end_date]);
+
+  const categories = useMemo(() => buildPackingCategories(climate || null), [climate]);
+
+  const totalItems = useMemo(() => categories.reduce((sum, cat) => sum + cat.items.length, 0), [categories]);
   const checkedCount = useMemo(() => {
     let count = 0;
-    PACKING_CATEGORIES.forEach((cat) => {
-      cat.items.forEach((_, i) => {
-        if (checklist[`pack-${cat.id}-${i}`]) count++;
+    categories.forEach((cat) => {
+      cat.items.forEach((item) => {
+        if (checklist[`pack-${cat.id}-${item}`]) count++;
       });
     });
     return count;
-  }, [checklist]);
+  }, [categories, checklist]);
 
   const pct = totalItems > 0 ? (checkedCount / totalItems) * 100 : 0;
 
   const toggle = (key) => onSave({ ...checklist, [key]: !checklist[key] });
 
+  const climateNote =
+    climate === undefined
+      ? "Checking the weather for this trip…"
+      : climate === null || climate.avgHigh == null
+      ? "Couldn't get weather data for this destination — showing a general list."
+      : climate.source === "forecast"
+      ? `Based on the live forecast (avg high ${Math.round(climate.avgHigh)}°C).`
+      : `Based on typical weather for these dates (avg high ${Math.round(climate.avgHigh)}°C).`;
+
   return (
     <div>
-      <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
-        A general-purpose packing checklist — tap items to check them off.
-      </p>
+      <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>{climateNote}</p>
       <div className="flex items-center gap-4 mb-5">
         <ProgressRing pct={pct} />
         <div>
@@ -34,12 +56,12 @@ export default function PackingTab({ trip, onSave }) {
         </div>
       </div>
 
-      {PACKING_CATEGORIES.map((cat) => (
+      {categories.map((cat) => (
         <Section key={cat.id} icon={<Luggage size={15} />} title={cat.title} accent="var(--text-primary)">
           <div className="space-y-1.5">
-            {cat.items.map((item, i) => {
-              const key = `pack-${cat.id}-${i}`;
-              return <ChecklistRow key={i} checked={!!checklist[key]} onClick={() => toggle(key)} text={item} accent="var(--text-primary)" />;
+            {cat.items.map((item) => {
+              const key = `pack-${cat.id}-${item}`;
+              return <ChecklistRow key={key} checked={!!checklist[key]} onClick={() => toggle(key)} text={item} accent="var(--text-primary)" />;
             })}
           </div>
         </Section>

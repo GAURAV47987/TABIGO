@@ -40,37 +40,62 @@ export const FX_API_URLS = [
   "https://latest.currency-api.pages.dev/v1/currencies/usd.json",
 ];
 
-export const PACKING_CATEGORIES = [
-  {
-    id: "documents",
-    title: "Documents & money",
-    items: [
-      "Passport",
-      "Visa / entry documents (if required)",
-      "Travel insurance details",
-      "Flight & accommodation confirmations",
-      "Local currency / cards",
-      "Copies of important documents (digital + physical)",
-    ],
-  },
-  {
-    id: "electronics",
-    title: "Electronics",
-    items: ["Phone + charger", "Power bank", "Universal travel adapter", "Headphones", "Camera (optional)"],
-  },
-  {
-    id: "toiletries",
-    title: "Toiletries",
-    items: ["Toothbrush & toothpaste", "Deodorant", "Sunscreen", "Basic medication / first-aid", "Any prescription medication"],
-  },
-  {
-    id: "clothing",
-    title: "Clothing",
-    items: ["Comfortable walking shoes", "Weather-appropriate outfits", "Sleepwear", "Underwear & socks", "A light jacket / layer"],
-  },
-  {
-    id: "extras",
-    title: "Extras",
-    items: ["Reusable water bottle", "Day bag / backpack", "Snacks for transit", "Entertainment for the journey"],
-  },
-];
+// Builds a packing list shaped by the trip's actual climate (avgHigh in °C,
+// rainyDays across the trip) instead of one fixed list for every
+// destination. `climate` is null while it's still loading or unavailable,
+// in which case clothing falls back to a generic "check the forecast" item.
+export function buildPackingCategories(climate) {
+  const clothingItems = ["Comfortable walking shoes", "Sleepwear", "Underwear & socks"];
+
+  if (!climate || climate.avgHigh == null) {
+    clothingItems.push("Weather-appropriate outfits (forecast unavailable)");
+  } else if (climate.avgHigh >= 27) {
+    clothingItems.push("Light, breathable clothing", "Shorts", "Swimwear", "Sun hat", "Sunglasses", "Sandals");
+  } else if (climate.avgHigh >= 18) {
+    clothingItems.push("Light layers", "A light jacket for evenings", "Sunglasses");
+  } else if (climate.avgHigh >= 10) {
+    clothingItems.push("Warm layers", "A proper jacket", "Long pants", "Closed-toe shoes");
+  } else {
+    clothingItems.push("Heavy coat", "Thermal base layers", "Gloves & beanie", "Scarf", "Waterproof boots");
+  }
+  if (climate?.rainyDays > 0) {
+    clothingItems.push("Rain jacket / compact umbrella");
+  }
+
+  return [
+    {
+      id: "documents",
+      title: "Documents & money",
+      items: [
+        "Passport",
+        "Visa / entry documents (if required)",
+        "Travel insurance details",
+        "Flight & accommodation confirmations",
+        "Local currency / cards",
+        "Copies of important documents (digital + physical)",
+      ],
+    },
+    {
+      id: "electronics",
+      title: "Electronics",
+      items: ["Phone + charger", "Power bank", "Universal travel adapter", "Headphones", "Camera (optional)"],
+    },
+    {
+      id: "toiletries",
+      title: "Toiletries",
+      items: [
+        "Toothbrush & toothpaste",
+        "Deodorant",
+        climate?.avgHigh >= 20 ? "Sunscreen" : "Moisturizer (dry/cold air)",
+        "Basic medication / first-aid",
+        "Any prescription medication",
+      ],
+    },
+    { id: "clothing", title: "Clothing", items: clothingItems },
+    {
+      id: "extras",
+      title: "Extras",
+      items: ["Reusable water bottle", "Day bag / backpack", "Snacks for transit", "Entertainment for the journey"],
+    },
+  ];
+}
