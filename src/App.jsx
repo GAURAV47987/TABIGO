@@ -8,10 +8,12 @@ import {
   createTrip,
   listTrips,
   getTrip,
+  updateTrip,
   listAllTripsAsAdmin,
 } from "./supabase";
 import { geocodeDestination } from "./geocode";
 import { isAdmin } from "./admin";
+import ItineraryTab from "./Itinerary";
 
 function AuthScreen() {
   const [mode, setMode] = useState("signin");
@@ -210,6 +212,20 @@ function NewTripModal({ onClose, onCreated }) {
   );
 }
 
+function AIGenerateCard() {
+  return (
+    <div className="p-4 rounded-2xl mb-4" style={{ background: "var(--surface)", border: "1px dashed var(--tape)" }}>
+      <p className="font-semibold mb-1" style={{ color: "var(--text-primary)" }}>✨ Generate itinerary with AI</p>
+      <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>
+        Draft a full day-by-day plan for this trip automatically — coming very soon.
+      </p>
+      <button disabled className="w-full py-2.5 rounded-lg font-semibold opacity-50 cursor-not-allowed" style={{ background: "var(--primary-bg)", color: "var(--primary-text)" }}>
+        Generate itinerary
+      </button>
+    </div>
+  );
+}
+
 function TripHub({ tripId, onBack }) {
   const [trip, setTrip] = useState(null);
 
@@ -218,6 +234,11 @@ function TripHub({ tripId, onBack }) {
   }, [tripId]);
 
   if (!trip) return <p className="p-6" style={{ color: "var(--text-body)" }}>Loading…</p>;
+
+  const saveItinerary = (itinerary) => {
+    setTrip((t) => ({ ...t, itinerary }));
+    updateTrip(tripId, { itinerary });
+  };
 
   return (
     <div className="min-h-screen px-4 py-6" style={{ background: "var(--bg)" }}>
@@ -228,12 +249,7 @@ function TripHub({ tripId, onBack }) {
       <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
         {trip.start_date} — {trip.end_date}
       </p>
-      <div className="p-4 rounded-2xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-        <p style={{ color: "var(--text-body)" }}>
-          Itinerary, budget, packing, and the rest of the tools land here next — this trip is ready and
-          waiting for them.
-        </p>
-      </div>
+      <ItineraryTab trip={trip} onSave={saveItinerary} aiSlot={<AIGenerateCard />} />
     </div>
   );
 }
