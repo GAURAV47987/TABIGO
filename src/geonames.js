@@ -52,19 +52,10 @@ function matchCountryCode(query) {
   return COUNTRY_CODES[query.trim().toLowerCase()] || null;
 }
 
-// Typing a country name suggests its biggest cities; typing anything else
-// (a partial city name) autocompletes matching populated places directly.
 // Uses secure.geonames.org (not the http:// one) since the app is served
 // over HTTPS and browsers block mixed-content requests.
-export async function searchPlaces(query) {
-  const trimmed = query.trim();
-  if (trimmed.length < 2) return [];
-
-  const countryCode = matchCountryCode(trimmed);
-  const url = countryCode
-    ? `https://secure.geonames.org/searchJSON?country=${countryCode}&featureClass=P&orderby=population&maxRows=12&username=${GEONAMES_USERNAME}`
-    : `https://secure.geonames.org/searchJSON?name_startsWith=${encodeURIComponent(trimmed)}&featureClass=P&orderby=population&maxRows=8&username=${GEONAMES_USERNAME}`;
-
+async function geonamesFetch(params) {
+  const url = `https://secure.geonames.org/searchJSON?${params}&username=${GEONAMES_USERNAME}`;
   const res = await fetch(url);
   let data;
   try {
@@ -76,11 +67,42 @@ export async function searchPlaces(query) {
   // 200 response, so check that before falling back to the HTTP status.
   if (data.status) throw new Error(data.status.message || "Place search failed");
   if (!res.ok) throw new Error(`Place search failed (HTTP ${res.status})`);
+  return data.geonames || [];
+}
 
-  return (data.geonames || []).map((g) => ({
-    name: g.name,
-    label: [g.name, g.adminName1, g.countryName].filter(Boolean).join(", "),
-    lat: parseFloat(g.lat),
-    lng: parseFloat(g.lng),
-  }));
+function toResult(g) {
+  const isRegion = (g.fcode || "").startsWith("ADM");
+  const label = isRegion
+    ? [g.name, g.countryName].filter(Boolean).join(", ")
+    : [g.name, g.adminName1, g.countryName].filter(Boolean).join(", ");
+  return { name: g.name, label, lat: parseFloat(g.lat), lng: parseFloat(g.lng) };
+}
+
+export async function searchPlaces(query) {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+
+  const countryCode = matchCountryCode(trimmed);
+
+  if (countryCode) {
+    // Browsing a whole country: show its biggest cities AND every one of
+    // its states/regions. States are fetched with a high maxRows (every
+    // country has a small, bounded number of them) rather than sorted-and-
+    // cut-off by population, because a famous-but-small state like Goa
+    // would otherwise be pushed out by India's much larger states.
+    const [cities, regions] = await Promise.all([
+      geonamesFetch(`country=${countryCode}&featureClass=P&orderby=population&maxRows=12`),
+      geonamesFetch(`country=${countryCode}&featureClass=A&featureCode=ADM1&orderby=population&maxRows=50`),
+    ]);
+    return [...regions.map(toResult), ...cities.map(toResult)];
+  }
+
+  // Typing a specific place name: search across cities, regions, and
+  // natural/tourist landmarks (bays, mountains, parks, historic sites) —
+  // not just populated places — so "Ha Long Bay" or "Sa Pa" can match
+  // even though a city-only search would exclude them entirely.
+  const results = await geonamesFetch(
+    `name_startsWith=${encodeURIComponent(trimmed)}&featureClass=P&featureClass=A&featureClass=H&featureClass=L&featureClass=S&featureClass=T&maxRows=10&orderby=relevance`
+  );
+  return results.map(toResult);
 }
