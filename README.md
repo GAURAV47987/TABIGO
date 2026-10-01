@@ -105,6 +105,12 @@ pairing codes).
   / Pack), same width as the app's own phone-size frame rather than the
   full viewport, instead of a top pill row — the standard mobile-app
   navigation pattern.
+- **Edge-swipe-back** (`src/useEdgeSwipeBack.js`) — a rightward drag
+  starting from the thin strip at the left edge of the screen goes back,
+  the standard iOS gesture, ported from the personal Europe app. Wired
+  into every full-page view that has a back/close action: Trip Hub, the
+  new trip wizard (steps back one at a time, then closes), the template
+  preview, Admin, and Profile.
 - **Itinerary** (`src/Itinerary.jsx`) — one day card per day of the trip,
   auto-generated from its dates, labeled with which stop that day belongs
   to on multi-stop trips; add/edit/delete time-optional plan items. A

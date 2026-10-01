@@ -29,6 +29,7 @@ import PackingTab from "./Packing";
 import TripMap from "./TripMap";
 import { PlaceBanner } from "./PlacePhoto";
 import tabigoLogo from "./assets/tabigo-logo.webp";
+import { useEdgeSwipeBack } from "./useEdgeSwipeBack";
 
 // A joined multi-stop label ("Athens → Paris") won't resolve to any one
 // Wikipedia page, so photos always key off the first stop's plain name.
@@ -211,6 +212,8 @@ function TripHub({ tripId, onBack }) {
     getTrip(tripId).then(setTrip);
   }, [tripId]);
 
+  useEdgeSwipeBack(onBack);
+
   if (!trip) return <p className="p-6" style={{ color: "var(--text-body)" }}>Loading…</p>;
 
   const save = (field) => (value) => {
@@ -307,6 +310,8 @@ function AdminPanel({ onBack }) {
       .catch((err) => setError(err.message || "Could not load admin data"));
   }, []);
 
+  useEdgeSwipeBack(onBack);
+
   return (
     <div className="min-h-screen px-4 py-6" style={{ background: "var(--bg)" }}>
       <button onClick={onBack} className="mb-4 text-sm underline" style={{ color: "var(--text-secondary)" }}>
@@ -347,6 +352,8 @@ function ProfilePanel({ session, onBack }) {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState("");
   const fileInputRef = useRef(null);
+
+  useEdgeSwipeBack(onBack);
 
   const pickAvatar = async (e) => {
     const file = e.target.files?.[0];

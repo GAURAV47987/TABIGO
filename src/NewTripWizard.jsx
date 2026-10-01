@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, X, Sparkles, Check } from "lucide-react";
 import { createTrip, suggestPopularPlaces } from "./supabase";
 import { geocodeDestination } from "./geocode";
@@ -7,6 +7,7 @@ import { buildDatedStops } from "./stops";
 import { getTripClimate } from "./weather";
 import { CURRENCIES } from "./constants";
 import { PlaceBanner } from "./PlacePhoto";
+import { useEdgeSwipeBack } from "./useEdgeSwipeBack";
 
 const STEPS = ["Destination", "Route", "Dates", "Add-ons"];
 
@@ -169,6 +170,12 @@ export default function NewTripWizard({ onClose, onCreated }) {
   const [geocodingName, setGeocodingName] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const swipeBack = useCallback(() => {
+    if (step > 1) setStep(step - 1);
+    else onClose();
+  }, [step, onClose]);
+  useEdgeSwipeBack(swipeBack);
 
   const changeDays = (i, delta) => {
     setStops((prev) => prev.map((s, idx) => (idx === i ? { ...s, days: Math.max(1, s.days + delta) } : s)));

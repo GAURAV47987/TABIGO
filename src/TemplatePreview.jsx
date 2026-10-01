@@ -4,6 +4,7 @@ import { createTrip, updateTrip } from "./supabase";
 import { buildDatedStops } from "./stops";
 import { enumerateDates } from "./dates";
 import { PlaceBanner } from "./PlacePhoto";
+import { useEdgeSwipeBack } from "./useEdgeSwipeBack";
 
 const TYPE_ICON = {
   photo: <Camera size={14} style={{ color: "var(--stamp)" }} />,
@@ -14,6 +15,8 @@ export default function TemplatePreview({ template, onClose, onCreated }) {
   const [startDate, setStartDate] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  useEdgeSwipeBack(onClose);
 
   const totalDays = template.stops.reduce((sum, s) => sum + s.days, 0);
 
@@ -57,7 +60,7 @@ export default function TemplatePreview({ template, onClose, onCreated }) {
     <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: "var(--bg)" }}>
       <div className="w-full mx-auto" style={{ maxWidth: "var(--app-max-width)", paddingBottom: 110 }}>
         <PlaceBanner placeName={template.stops[0].name} height={180}>
-          <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-full" style={{ background: "rgba(0,0,0,0.45)", color: "white" }}>
+          <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-full z-10" style={{ background: "rgba(0,0,0,0.45)", color: "white" }}>
             <X size={18} />
           </button>
           <div className="absolute inset-0 flex flex-col justify-end p-4">
