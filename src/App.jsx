@@ -559,7 +559,7 @@ function Dashboard({ session }) {
       {homeTab === "home" && (
         <div>
           <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>Your next adventure starts here.</p>
-          <p className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>Ready-made itineraries</p>
+          <p className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>Where do you want to go next?</p>
           <div className="grid grid-cols-2 gap-3">
             {TRIP_TEMPLATES.map((t) => (
               <button
