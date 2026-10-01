@@ -9,22 +9,24 @@ input, select, textarea {
 
 :root {
   color-scheme: light;
-  /* Postcard Journal — kraft paper, ink navy, stamp red, tape gold */
-  --bg: #E9DEC4;
-  --surface: #FBF5E9;
-  --border: #D3C4A0;
-  --text-primary: #26344A;
-  --text-body: #3B3226;
-  --text-tertiary: #5C513F;
-  --text-secondary: #7C6A4E;
-  --text-muted: #94845F;
-  --text-faint: #B4A57E;
-  --icon-empty: #C9BB98;
-  --scrollbar-thumb: #D3C4A0;
-  --primary-bg: #26344A;
-  --primary-text: #F1EADA;
-  --stamp: #B23A2E;
-  --tape: #E8C468;
+  /* Postcard Pop — same stamp/tape/passport motifs as before, recolored
+     bright and playful instead of muted kraft paper: violet primary,
+     coral stamp, buttery-yellow tape, on a clean near-white surface. */
+  --bg: #FBF8FF;
+  --surface: #FFFFFF;
+  --border: #EDE7FA;
+  --text-primary: #241E3D;
+  --text-body: #3A3159;
+  --text-tertiary: #5B5380;
+  --text-secondary: #7A72A3;
+  --text-muted: #8680AC;
+  --text-faint: #C3BEDE;
+  --icon-empty: #D8D3EE;
+  --scrollbar-thumb: #D8D3EE;
+  --primary-bg: #7C5CFC;
+  --primary-text: #FFFFFF;
+  --stamp: #DB2450;
+  --tape: #FFD23F;
 
   /* Budget category palette — validated categorical order (dataviz skill),
      ALL checks pass at surface #ffffff; contrast WARN on 3 slots is
@@ -40,22 +42,23 @@ input, select, textarea {
 
 :root.dark {
   color-scheme: dark;
-  /* Postcard Journal, night desk — deep ink navy paper, cream ink */
-  --bg: #1B2430;
-  --surface: #232E3D;
-  --border: #37455A;
-  --text-primary: #F1EADA;
-  --text-body: #E5DCC8;
-  --text-tertiary: #CBC0A6;
-  --text-secondary: #A79A7C;
-  --text-muted: #8A7F68;
-  --text-faint: #5C5A4E;
-  --icon-empty: #4A5568;
-  --scrollbar-thumb: #3D4A5E;
-  --primary-bg: #F1EADA;
-  --primary-text: #1B2430;
-  --stamp: #E0574A;
-  --tape: #E8C468;
+  /* Postcard Pop, night mode — deep indigo-plum instead of ink navy,
+     same coral/yellow accents brightened a touch for dark contrast. */
+  --bg: #1A1530;
+  --surface: #241E42;
+  --border: #352C5C;
+  --text-primary: #F5F3FF;
+  --text-body: #E8E4FA;
+  --text-tertiary: #C9C2E8;
+  --text-secondary: #A89FD1;
+  --text-muted: #8A80B8;
+  --text-faint: #5C5485;
+  --icon-empty: #4A4270;
+  --scrollbar-thumb: #453C70;
+  --primary-bg: #A78BFA;
+  --primary-text: #1A1530;
+  --stamp: #FF7A94;
+  --tape: #FFD23F;
 
   /* Budget category palette — dark-surface steps, validated against #26221b. */
   --cat-flights: #3987e5;
@@ -70,7 +73,6 @@ input, select, textarea {
 body {
   margin: 0;
   background-color: var(--bg);
-  background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 5%, transparent) 0 2px, transparent 2px 6px);
   transition: background-color 200ms ease;
   display: flex;
   justify-content: center;

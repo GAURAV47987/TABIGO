@@ -79,9 +79,14 @@ pairing codes).
   route line on the Map. Older trips created before this existed still
   work — they're treated as one implicit stop spanning their original
   dates.
-- **Postcard Journal theme** — ported as-is from the personal app
-  (`src/index.css`): kraft-paper background, ink-navy/stamp-red/tape-gold
-  accents, light/dark mode tokens.
+- **Postcard Pop theme** (`src/index.css`) — the same postcard/passport
+  motifs as the personal app (stamp badges, dashed-tape borders, the
+  compass logo) recolored bright and playful instead of muted kraft
+  paper: a clean near-white surface, vibrant violet primary, coral stamp,
+  buttery-yellow tape accents. Every component already read its colors
+  from CSS custom properties, so this was a palette swap, not a rebuild —
+  light/dark mode tokens both updated, contrast-checked against WCAG AA
+  for anything used as text.
 - **Destination photos** (`src/photos.js`, `src/PlacePhoto.jsx`) — a real
   photo of each trip's first stop as a banner on its dashboard card and
   Trip Hub header, via the Pexels API. Looked up once per trip, ever: the
