@@ -534,7 +534,7 @@ function Dashboard({ session }) {
     <div className="min-h-screen px-4 pt-6" style={{ background: "var(--bg)", paddingBottom: 100 }}>
       <div className="flex items-center justify-between mb-6">
         <button onClick={() => setHomeTab("home")} aria-label="Go to home">
-          <img src={tabigoLogo} alt="TABIGO" className="h-8 w-auto" />
+          <img src={tabigoLogo} alt="TABIGO" className="h-12 w-auto" />
         </button>
         <div className="flex items-center gap-4">
           {isAdmin(session) && (
