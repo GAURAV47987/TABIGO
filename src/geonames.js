@@ -52,22 +52,48 @@ function matchCountryCode(query) {
   return COUNTRY_CODES[query.trim().toLowerCase()] || null;
 }
 
+// The free GeoNames webservice is shared by every visitor using this one
+// account and chokes on bursts (e.g. a dashboard rendering many trip tiles
+// at once, each wanting a city lookup for its photo). Serializing calls
+// through a single queue, spaced out, avoids silent rate-limit failures
+// that would otherwise degrade a result (e.g. falling back to a worse
+// photo-search term) without ever surfacing an error.
+let geonamesQueue = Promise.resolve();
+const GEONAMES_MIN_GAP_MS = 350;
+
+function queueGeonamesCall(run) {
+  const scheduled = geonamesQueue.then(async () => {
+    const result = await run();
+    await new Promise((resolve) => setTimeout(resolve, GEONAMES_MIN_GAP_MS));
+    return result;
+  });
+  // Keep the queue moving even if this call fails, and never let a
+  // rejection here surface as an unhandled rejection on the shared chain.
+  geonamesQueue = scheduled.then(
+    () => {},
+    () => {}
+  );
+  return scheduled;
+}
+
 // Uses secure.geonames.org (not the http:// one) since the app is served
 // over HTTPS and browsers block mixed-content requests.
-async function geonamesFetch(params) {
-  const url = `https://secure.geonames.org/searchJSON?${params}&username=${GEONAMES_USERNAME}`;
-  const res = await fetch(url);
-  let data;
-  try {
-    data = await res.json();
-  } catch (e) {
-    throw new Error(`Place search failed (HTTP ${res.status})`);
-  }
-  // GeoNames puts account/rate-limit errors in the JSON body even on a
-  // 200 response, so check that before falling back to the HTTP status.
-  if (data.status) throw new Error(data.status.message || "Place search failed");
-  if (!res.ok) throw new Error(`Place search failed (HTTP ${res.status})`);
-  return data.geonames || [];
+function geonamesFetch(params) {
+  return queueGeonamesCall(async () => {
+    const url = `https://secure.geonames.org/searchJSON?${params}&username=${GEONAMES_USERNAME}`;
+    const res = await fetch(url);
+    let data;
+    try {
+      data = await res.json();
+    } catch (e) {
+      throw new Error(`Place search failed (HTTP ${res.status})`);
+    }
+    // GeoNames puts account/rate-limit errors in the JSON body even on a
+    // 200 response, so check that before falling back to the HTTP status.
+    if (data.status) throw new Error(data.status.message || "Place search failed");
+    if (!res.ok) throw new Error(`Place search failed (HTTP ${res.status})`);
+    return data.geonames || [];
+  });
 }
 
 function toResult(g) {
@@ -113,10 +139,15 @@ export async function searchPlaces(query) {
 export async function getTopCityForCountry(name) {
   const code = matchCountryCode(name);
   if (!code) return null;
-  try {
-    const cities = await geonamesFetch(`country=${code}&featureClass=P&orderby=population&maxRows=1`);
-    return cities[0]?.name || null;
-  } catch (e) {
-    return null;
+  const params = `country=${code}&featureClass=P&orderby=population&maxRows=1`;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const cities = await geonamesFetch(params);
+      return cities[0]?.name || null;
+    } catch (e) {
+      // One retry handles a transient rate-limit error; after that, give
+      // up and let the caller fall back to the raw country name.
+    }
   }
+  return null;
 }
