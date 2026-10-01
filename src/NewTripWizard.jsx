@@ -254,8 +254,12 @@ export default function NewTripWizard({ onClose, onCreated }) {
     try {
       const dated = buildDatedStops(stops, startDate);
       const endDate = dated[dated.length - 1].endDate;
+      const autoName =
+        stops.length <= 2
+          ? stops.map((s) => s.name).join(" → ")
+          : `${stops[0].name} +${stops.length - 1} more`;
       const trip = await createTrip({
-        destinationName: tripName.trim() || stops.map((s) => s.name).join(" → "),
+        destinationName: tripName.trim() || autoName,
         lat: dated[0].lat,
         lng: dated[0].lng,
         startDate,

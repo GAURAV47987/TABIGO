@@ -51,7 +51,14 @@ pairing codes).
   (4) *Popular add-ons* — Gemini suggests genuinely worth-visiting places
   near your first stop, shown as tappable stamp cards with a one-line
   reason each, instead of a plain list — tap to add or remove from the
-  route, then create the trip. The start date is optional — not sure yet?
+  route, then create the trip. Suggestions are cached app-wide by
+  destination name (`supabase/add_place_suggestions_cache.sql`, same idea
+  as the photo cache below) — the first person to ask about a destination
+  pays Gemini's few-second latency, everyone after that gets it instantly.
+  If you add more than two stops this way (or any way), the trip's
+  auto-generated name shows just the first stop plus a count ("Istanbul
+  +3 more") instead of chaining every stop's name together, which got
+  unreadable fast. The start date is optional — not sure yet?
   Skip it and create the trip anyway; the Itinerary tab will ask for a
   start date the first time you open it, and sets every stop's dates
   automatically from the day counts you already gave them, same as the

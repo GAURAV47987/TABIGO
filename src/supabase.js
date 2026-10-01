@@ -158,13 +158,29 @@ export async function generateItinerary({ stops }) {
   return data; // { days: [{ day, items: [{ time, title, notes, type }] }] }
 }
 
+// A Gemini call takes several seconds — shared with every user the same
+// way place_photos is, so only the first person to ask about a given
+// destination ever pays that cost. Everyone after gets it instantly.
 export async function suggestPopularPlaces(destination) {
+  const key = destination.trim().toLowerCase();
+  try {
+    const { data: cached } = await supabase.from("place_suggestions").select("places").eq("name", key).maybeSingle();
+    if (cached) return cached.places;
+  } catch (e) {
+    // Shared cache unreachable — fall through to a live call.
+  }
+
   const { data, error } = await supabase.functions.invoke("rapid-function", {
     body: { mode: "suggest_places", destination },
   });
   if (error) throw await friendlyFunctionError(error);
   if (data?.error) throw new Error(data.error);
-  return data.places; // [{ name, reason }]
+  const places = data.places; // [{ name, reason }]
+  supabase.from("place_suggestions").upsert({ name: key, places }).then(
+    () => {},
+    () => {}
+  );
+  return places;
 }
 
 export async function updateTrip(id, fields) {
