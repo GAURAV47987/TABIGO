@@ -533,7 +533,9 @@ function Dashboard({ session }) {
   return (
     <div className="min-h-screen px-4 pt-6" style={{ background: "var(--bg)", paddingBottom: 100 }}>
       <div className="flex items-center justify-between mb-6">
-        <img src={tabigoLogo} alt="TABIGO" className="h-8 w-auto" />
+        <button onClick={() => setHomeTab("home")} aria-label="Go to home">
+          <img src={tabigoLogo} alt="TABIGO" className="h-8 w-auto" />
+        </button>
         <div className="flex items-center gap-4">
           {isAdmin(session) && (
             <button onClick={() => setShowAdmin(true)} className="text-sm underline" style={{ color: "var(--stamp)" }}>
