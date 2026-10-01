@@ -107,6 +107,21 @@ export async function listTrips() {
   return data;
 }
 
+// A shared, app-wide photo cache (see supabase/add_place_photos_cache.sql):
+// once anyone's trip resolves a photo for a place name, every other trip
+// that asks for the same name gets it from here instead of re-querying
+// GeoNames/Pexels. undefined means "no cache row yet" (genuinely new place,
+// go do the live lookup); "" means "looked up before, nothing found".
+export async function getCachedPlacePhoto(name) {
+  const { data, error } = await supabase.from("place_photos").select("photo_url").eq("name", name).maybeSingle();
+  if (error) return undefined;
+  return data ? data.photo_url : undefined;
+}
+
+export async function cachePlacePhoto(name, photoUrl) {
+  await supabase.from("place_photos").upsert({ name, photo_url: photoUrl, resolved_at: new Date().toISOString() });
+}
+
 // Admin-only: every trip from every user, with the owner's email. The
 // admin_list_trips function checks the caller's email server-side before
 // returning anything, so this call fails for anyone else regardless of

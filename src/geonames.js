@@ -52,6 +52,58 @@ function matchCountryCode(query) {
   return COUNTRY_CODES[query.trim().toLowerCase()] || null;
 }
 
+// Hand-picked once for the most commonly planned destinations, so finding
+// a good photo-search term for a whole country ("New Zealand" -> "Auckland")
+// never has to touch GeoNames at all — no network round trip, no shared
+// rate limit to contend with. Any country not listed here still works via
+// the dynamic lookup in getTopCityForCountry below.
+const TOP_CITY = {
+  france: "Paris", italy: "Rome", spain: "Barcelona", portugal: "Lisbon",
+  greece: "Athens", germany: "Berlin", netherlands: "Amsterdam", belgium: "Brussels",
+  switzerland: "Zurich", austria: "Vienna", "united kingdom": "London", uk: "London",
+  ireland: "Dublin", iceland: "Reykjavik", norway: "Oslo", sweden: "Stockholm",
+  denmark: "Copenhagen", finland: "Helsinki", poland: "Krakow", czechia: "Prague",
+  "czech republic": "Prague", hungary: "Budapest", croatia: "Dubrovnik", slovenia: "Ljubljana",
+  slovakia: "Bratislava", romania: "Bucharest", bulgaria: "Sofia", serbia: "Belgrade",
+  "bosnia and herzegovina": "Sarajevo", montenegro: "Kotor", albania: "Tirana",
+  "north macedonia": "Skopje", kosovo: "Pristina", estonia: "Tallinn", latvia: "Riga",
+  lithuania: "Vilnius", ukraine: "Kyiv", belarus: "Minsk", russia: "Moscow",
+  turkey: "Istanbul", cyprus: "Nicosia", malta: "Valletta", luxembourg: "Luxembourg City",
+  monaco: "Monaco", "vatican city": "Vatican City", andorra: "Andorra la Vella",
+  liechtenstein: "Vaduz", moldova: "Chisinau", georgia: "Tbilisi", armenia: "Yerevan",
+  azerbaijan: "Baku",
+  japan: "Tokyo", china: "Beijing", "south korea": "Seoul", "north korea": "Pyongyang",
+  india: "Delhi", nepal: "Kathmandu", bhutan: "Thimphu", bangladesh: "Dhaka",
+  "sri lanka": "Colombo", pakistan: "Lahore", afghanistan: "Kabul", thailand: "Bangkok",
+  vietnam: "Ho Chi Minh City", cambodia: "Siem Reap", laos: "Luang Prabang",
+  myanmar: "Yangon", malaysia: "Kuala Lumpur", singapore: "Singapore", indonesia: "Jakarta",
+  philippines: "Manila", brunei: "Bandar Seri Begawan", mongolia: "Ulaanbaatar",
+  kazakhstan: "Almaty", uzbekistan: "Tashkent", kyrgyzstan: "Bishkek", tajikistan: "Dushanbe",
+  turkmenistan: "Ashgabat", taiwan: "Taipei", iran: "Tehran", iraq: "Baghdad",
+  israel: "Jerusalem", jordan: "Amman", lebanon: "Beirut", syria: "Damascus",
+  "saudi arabia": "Riyadh", "united arab emirates": "Dubai", uae: "Dubai", qatar: "Doha",
+  kuwait: "Kuwait City", bahrain: "Manama", oman: "Muscat", yemen: "Sana'a",
+  egypt: "Cairo", morocco: "Marrakech", tunisia: "Tunis", algeria: "Algiers",
+  libya: "Tripoli", sudan: "Khartoum", "south sudan": "Juba", ethiopia: "Addis Ababa",
+  kenya: "Nairobi", tanzania: "Dar es Salaam", uganda: "Kampala", rwanda: "Kigali",
+  burundi: "Bujumbura", "south africa": "Cape Town", namibia: "Windhoek",
+  botswana: "Gaborone", zimbabwe: "Harare", zambia: "Lusaka", mozambique: "Maputo",
+  madagascar: "Antananarivo", mauritius: "Port Louis", seychelles: "Victoria",
+  ghana: "Accra", nigeria: "Lagos", senegal: "Dakar", mali: "Bamako", niger: "Niamey",
+  chad: "N'Djamena", cameroon: "Douala", gabon: "Libreville", angola: "Luanda",
+  "united states": "New York City", usa: "New York City", "united states of america": "New York City",
+  canada: "Toronto", mexico: "Mexico City", guatemala: "Guatemala City", belize: "Belize City",
+  "costa rica": "San Jose", panama: "Panama City", cuba: "Havana", jamaica: "Kingston",
+  "dominican republic": "Santo Domingo", haiti: "Port-au-Prince",
+  "trinidad and tobago": "Port of Spain", bahamas: "Nassau", barbados: "Bridgetown",
+  brazil: "Rio de Janeiro", argentina: "Buenos Aires", chile: "Santiago", peru: "Cusco",
+  colombia: "Bogota", ecuador: "Quito", bolivia: "La Paz", paraguay: "Asuncion",
+  uruguay: "Montevideo", venezuela: "Caracas", guyana: "Georgetown", suriname: "Paramaribo",
+  australia: "Sydney", "new zealand": "Auckland", fiji: "Suva",
+  "papua new guinea": "Port Moresby", "solomon islands": "Honiara", vanuatu: "Port Vila",
+  tonga: "Nuku'alofa", kiribati: "Tarawa", palau: "Koror",
+};
+
 // The free GeoNames webservice is shared by every visitor using this one
 // account and chokes on bursts (e.g. a dashboard rendering many trip tiles
 // at once, each wanting a city lookup for its photo). Serializing calls
@@ -137,6 +189,8 @@ export async function searchPlaces(query) {
 // instead of the country name itself, which reads as too generic/broad
 // to reliably match a recognizable travel photo.
 export async function getTopCityForCountry(name) {
+  const known = TOP_CITY[name.trim().toLowerCase()];
+  if (known) return known;
   const code = matchCountryCode(name);
   if (!code) return null;
   const params = `country=${code}&featureClass=P&orderby=population&maxRows=1`;

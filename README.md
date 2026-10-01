@@ -63,8 +63,20 @@ pairing codes).
   Trip Hub header, via the Pexels API. Looked up once per trip, ever: the
   found photo (or the fact that none was found) is saved permanently to
   that trip's own `photo_url` column, so re-opening or re-viewing a trip
-  never re-queries Pexels — only genuinely new trips do. Falls back to a
-  themed gradient while loading or when no photo exists for that name.
+  never re-queries Pexels — only genuinely new trips do. A whole-country
+  name ("Vietnam") is redirected to its biggest city first ("Ho Chi Minh
+  City"), which searches far better than the country name itself — for
+  ~115 commonly planned countries that's a hand-picked, instant lookup
+  (`TOP_CITY` in `src/geonames.js`) with no network call at all; any other
+  country falls back to a live GeoNames lookup. Either way, the resolved
+  photo is also saved to a shared `place_photos` table
+  (`supabase/add_place_photos_cache.sql`) keyed by place name, so the very
+  first trip (anyone's, not just yours) to ask about a given place pays
+  the lookup cost once, and every trip after that — across every user —
+  gets it instantly from the database instead of re-querying GeoNames/
+  Pexels. This is what keeps photo lookups fast as more people use the
+  app, rather than slower. Falls back to a themed gradient while loading
+  or when no photo exists for that name.
 - **Trip Hub** — a fixed bottom tab bar (Itinerary / Budget / Convert / Map
   / Pack), same width as the app's own phone-size frame rather than the
   full viewport, instead of a top pill row — the standard mobile-app
