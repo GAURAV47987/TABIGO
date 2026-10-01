@@ -30,9 +30,13 @@ pairing codes).
   The actual home tab is intentionally empty for the moment, reserved for
   whatever lands there later (a stats/travel-journal view is one idea
   discussed).
-- **New trip wizard** (`src/NewTripWizard.jsx`) — a 4-step flow instead of
-  one long form: (1) *Where are you going?* — type a city, or a whole
-  country to see its biggest cities (`src/geonames.js`); (2) *Your route*
+- **New trip wizard** (`src/NewTripWizard.jsx`) — a full-page 4-step flow
+  (not a popup) instead of one long form, so a long suggestion list has
+  real room instead of hiding most of itself in a small scrollable box:
+  (1) *Where are you going?* — type a city, or a whole country to see the
+  country itself listed first (pick it to plan the trip around the whole
+  country as one stop), then its states/regions, then its biggest cities
+  (`src/geonames.js`); (2) *Your route*
   — a destination photo with a passport-style "stamp" overlay, plus a
   connected-dot **journey strip** for the stop sequence (tweak days per
   stop or add more stops right there); (3) *When are you going?* — start

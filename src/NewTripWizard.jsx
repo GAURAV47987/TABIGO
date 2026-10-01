@@ -54,11 +54,14 @@ function PlaceAutocomplete({ value, onChange, onPick, placeholder, autoFocus }) 
         className="w-full px-3 py-2 rounded-lg text-sm"
         style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
       />
-      {loading && <p className="absolute text-xs mt-1" style={{ color: "var(--text-muted)" }}>Searching…</p>}
-      {!loading && error && <p className="absolute text-xs mt-1" style={{ color: "var(--stamp)" }}>{error}</p>}
+      {loading && <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Searching…</p>}
+      {!loading && error && <p className="text-xs mt-1" style={{ color: "var(--stamp)" }}>{error}</p>}
       {open && suggestions.length > 0 && (
+        // Plain in-flow block (not an absolutely-positioned overlay with its
+        // own capped scroll area) — the whole page scrolls to reveal every
+        // suggestion instead of hiding most of them in a tiny scroll box.
         <div
-          className="absolute z-10 left-0 right-0 mt-1 rounded-lg max-h-48 overflow-y-auto tg-card"
+          className="mt-1 rounded-lg tg-card"
           style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
         >
           {suggestions.map((s, i) => (
@@ -274,27 +277,24 @@ export default function NewTripWizard({ onClose, onCreated }) {
       : null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center px-4 z-50 py-8" style={{ background: "rgba(0,0,0,0.45)" }}>
-      <div
-        className="w-full max-w-sm rounded-2xl p-6 tg-card flex flex-col"
-        style={{ background: "var(--surface)", border: "1px solid var(--border)", maxHeight: "85vh" }}
-      >
-        <div className="flex items-center justify-between mb-3 shrink-0">
+    <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: "var(--bg)" }}>
+      <div className="w-full mx-auto px-4 pt-6" style={{ maxWidth: "var(--app-max-width)", paddingBottom: 100 }}>
+        <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
             Step {step} of {STEPS.length} · {STEPS[step - 1]}
           </p>
           <button onClick={onClose} style={{ color: "var(--text-tertiary)" }}>
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
-        <div className="flex items-center gap-1.5 mb-5 shrink-0">
+        <div className="flex items-center gap-1.5 mb-5">
           {STEPS.map((label, i) => (
             <div key={label} className="flex-1 h-1.5 rounded-full" style={{ background: i < step ? "var(--stamp)" : "var(--border)" }} />
           ))}
         </div>
 
-        <div className="overflow-y-auto flex-1 -mx-1 px-1">
+        <div>
           {step === 1 && (
             <div>
               <h2 className="text-lg font-bold mb-1" style={{ color: "var(--text-primary)" }}>Where are you going?</h2>
@@ -430,9 +430,23 @@ export default function NewTripWizard({ onClose, onCreated }) {
             </div>
           )}
         </div>
+      </div>
 
-        <div className="flex gap-2 mt-5 shrink-0">
-          {step > 1 && (
+      <div
+        className="flex gap-2 px-4 py-4"
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "100%",
+          maxWidth: "var(--app-max-width)",
+          background: "var(--surface)",
+          borderTop: "1px solid var(--border)",
+          paddingBottom: "env(safe-area-inset-bottom, 0)",
+        }}
+      >
+        {step > 1 && (
             <button
               type="button"
               onClick={() => setStep(step - 1)}
@@ -485,7 +499,6 @@ export default function NewTripWizard({ onClose, onCreated }) {
               {busy ? "Creating…" : <><Sparkles size={14} className="inline mr-1" />Create trip</>}
             </button>
           )}
-        </div>
       </div>
     </div>
   );

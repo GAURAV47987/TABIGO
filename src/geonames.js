@@ -149,8 +149,11 @@ function geonamesFetch(params) {
 }
 
 function toResult(g) {
-  const isRegion = (g.fcode || "").startsWith("ADM");
-  const label = isRegion
+  const isCountry = g.fcode === "PCLI";
+  const isRegion = !isCountry && (g.fcode || "").startsWith("ADM");
+  const label = isCountry
+    ? g.name
+    : isRegion
     ? [g.name, g.countryName].filter(Boolean).join(", ")
     : [g.name, g.adminName1, g.countryName].filter(Boolean).join(", ");
   return { name: g.name, label, lat: parseFloat(g.lat), lng: parseFloat(g.lng) };
@@ -163,16 +166,18 @@ export async function searchPlaces(query) {
   const countryCode = matchCountryCode(trimmed);
 
   if (countryCode) {
-    // Browsing a whole country: show its biggest cities AND every one of
-    // its states/regions. States are fetched with a high maxRows (every
-    // country has a small, bounded number of them) rather than sorted-and-
-    // cut-off by population, because a famous-but-small state like Goa
-    // would otherwise be pushed out by India's much larger states.
-    const [cities, regions] = await Promise.all([
+    // Browsing a whole country: lead with the country itself (picking it
+    // means "the whole country" as one stop), then its states/regions,
+    // then its biggest cities. States are fetched with a high maxRows
+    // (every country has a small, bounded number of them) rather than
+    // sorted-and-cut-off by population, because a famous-but-small state
+    // like Goa would otherwise be pushed out by India's much larger states.
+    const [country, cities, regions] = await Promise.all([
+      geonamesFetch(`country=${countryCode}&featureClass=A&featureCode=PCLI&maxRows=1`),
       geonamesFetch(`country=${countryCode}&featureClass=P&orderby=population&maxRows=12`),
       geonamesFetch(`country=${countryCode}&featureClass=A&featureCode=ADM1&orderby=population&maxRows=50`),
     ]);
-    return [...regions.map(toResult), ...cities.map(toResult)];
+    return [...country.map(toResult), ...regions.map(toResult), ...cities.map(toResult)];
   }
 
   // Typing a specific place name: search across cities, regions, and
