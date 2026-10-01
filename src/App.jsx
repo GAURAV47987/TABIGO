@@ -20,6 +20,8 @@ import { enumerateDates } from "./dates";
 import { buildDatedStops, getEffectiveStops } from "./stops";
 import { isAdmin } from "./admin";
 import NewTripWizard from "./NewTripWizard";
+import TemplatePreview from "./TemplatePreview";
+import { TRIP_TEMPLATES } from "./templates";
 import ItineraryTab from "./Itinerary";
 import BudgetTab from "./Budget";
 import ConverterTab from "./Converter";
@@ -506,6 +508,7 @@ function Dashboard({ session }) {
   const [showProfile, setShowProfile] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [openTemplate, setOpenTemplate] = useState(null);
 
   const refresh = () => {
     setLoading(true);
@@ -554,8 +557,27 @@ function Dashboard({ session }) {
       </div>
 
       {homeTab === "home" && (
-        <div className="flex flex-col items-center justify-center text-center" style={{ minHeight: "55vh" }}>
-          <p style={{ color: "var(--text-secondary)" }}>Your next adventure starts here.</p>
+        <div>
+          <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>Your next adventure starts here.</p>
+          <p className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>Ready-made itineraries</p>
+          <div className="grid grid-cols-2 gap-3">
+            {TRIP_TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setOpenTemplate(t)}
+                className="text-left rounded-2xl overflow-hidden tg-card relative"
+              >
+                <PlaceBanner placeName={t.stops[0].name} height={140}>
+                  <div className="absolute inset-0 flex flex-col justify-end p-3">
+                    <p className="font-semibold text-sm leading-tight" style={{ color: "white" }}>{t.name}</p>
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
+                      {t.stops.reduce((sum, s) => sum + s.days, 0)} days
+                    </p>
+                  </div>
+                </PlaceBanner>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -656,6 +678,18 @@ function Dashboard({ session }) {
           onClose={() => setShowNewTrip(false)}
           onCreated={() => {
             setShowNewTrip(false);
+            refresh();
+            setHomeTab("trips");
+          }}
+        />
+      )}
+
+      {openTemplate && (
+        <TemplatePreview
+          template={openTemplate}
+          onClose={() => setOpenTemplate(null)}
+          onCreated={() => {
+            setOpenTemplate(null);
             refresh();
             setHomeTab("trips");
           }}

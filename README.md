@@ -33,9 +33,16 @@ pairing codes).
   **+** button (opens New Trip from anywhere, then lands you on the Trips
   tab with the new one in it, rather than opening it directly), and
   **Explore** (placeholder for now — future destination-browsing ideas).
-  The actual home tab is intentionally empty for the moment, reserved for
-  whatever lands there later (a stats/travel-journal view is one idea
-  discussed).
+  The Home tab itself shows **ready-made itineraries** (`src/templates.js`,
+  `src/TemplatePreview.jsx`) — researched, day-by-day routes for popular
+  destinations (Japan's Tokyo/Kyoto/Osaka route is the first one, at the
+  same level of specificity as a real hand-built itinerary: named
+  neighborhoods and restaurants, actual train routes with durations and
+  fares, timing tips, not generic AI output). Tapping one opens a full
+  preview of every day before committing to anything; "Use this" asks for
+  a start date, then creates the trip with its stops and entire itinerary
+  pre-filled — the same multi-stop, dates-optional trip underneath, so
+  every other feature (Budget, Map, Packing) just works on it immediately.
 - **New trip wizard** (`src/NewTripWizard.jsx`) — a full-page 4-step flow
   (not a popup) instead of one long form, so a long suggestion list has
   real room instead of hiding most of itself in a small scrollable box:
