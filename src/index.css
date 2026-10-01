@@ -76,6 +76,10 @@ body {
   justify-content: center;
 }
 
+:root {
+  --app-max-width: 480px;
+}
+
 /* A mobile app, not a responsive website — on anything wider than a phone
    (a laptop/desktop browser), the app stays phone-width and centered,
    with the textured background showing through on either side, instead
@@ -83,10 +87,26 @@ body {
    narrower than the cap, so nothing changes there. */
 #root {
   width: 100%;
-  max-width: 480px;
+  max-width: var(--app-max-width);
   min-height: 100vh;
   background: var(--bg);
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.12);
+}
+
+/* A fixed bottom tab bar, same width/centering as the app frame above
+   (not the full viewport) so it lines up with the app on desktop too. */
+.tg-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-max-width);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  z-index: 40;
 }
 
 /* Depth + tactility, applied across cards/buttons so the app doesn't read

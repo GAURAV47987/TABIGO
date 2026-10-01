@@ -16,7 +16,7 @@ import {
   listAllTripsAsAdmin,
   generateItinerary,
 } from "./supabase";
-import { Plus, Trash2, User } from "lucide-react";
+import { Plus, Trash2, User, Calendar, Wallet, ArrowLeftRight, Map as MapIcon, Luggage } from "lucide-react";
 import { enumerateDates } from "./dates";
 import { geocodeDestination } from "./geocode";
 import { searchPlaces } from "./geonames";
@@ -426,11 +426,11 @@ function AIGenerateCard({ trip, onGenerated }) {
 }
 
 const TRIP_TABS = [
-  { id: "itinerary", label: "Itinerary" },
-  { id: "budget", label: "Budget" },
-  { id: "convert", label: "Convert" },
-  { id: "map", label: "Map" },
-  { id: "pack", label: "Pack" },
+  { id: "itinerary", label: "Itinerary", icon: Calendar },
+  { id: "budget", label: "Budget", icon: Wallet },
+  { id: "convert", label: "Convert", icon: ArrowLeftRight },
+  { id: "map", label: "Map", icon: MapIcon },
+  { id: "pack", label: "Pack", icon: Luggage },
 ];
 
 function TripHub({ tripId, onBack }) {
@@ -449,7 +449,7 @@ function TripHub({ tripId, onBack }) {
   };
 
   return (
-    <div className="min-h-screen px-4 py-6" style={{ background: "var(--bg)" }}>
+    <div className="min-h-screen px-4 pt-6" style={{ background: "var(--bg)", paddingBottom: 100 }}>
       <button onClick={onBack} className="mb-4 text-sm underline" style={{ color: "var(--text-secondary)" }}>
         ← My trips
       </button>
@@ -477,23 +477,6 @@ function TripHub({ tripId, onBack }) {
         </div>
       </PlaceBanner>
 
-      <div className="flex gap-2 mb-5 overflow-x-auto">
-        {TRIP_TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium shrink-0 tg-btn ${tab === t.id ? "tg-btn-primary" : ""}`}
-            style={
-              tab === t.id
-                ? { color: "var(--primary-text)" }
-                : { background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }
-            }
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
       {tab === "itinerary" && (
         <ItineraryTab
           trip={trip}
@@ -510,6 +493,24 @@ function TripHub({ tripId, onBack }) {
       {tab === "convert" && <ConverterTab homeCurrency={trip.home_currency || "USD"} />}
       {tab === "map" && <TripMap trip={trip} onSave={save("map_pins")} />}
       {tab === "pack" && <PackingTab trip={trip} onSave={save("packing")} />}
+
+      <div className="tg-bottom-nav flex">
+        {TRIP_TABS.map((t) => {
+          const Icon = t.icon;
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className="flex-1 flex flex-col items-center gap-0.5 py-2"
+              style={{ color: active ? "var(--stamp)" : "var(--text-muted)" }}
+            >
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+              <span className="text-[11px] font-medium">{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -45,8 +45,10 @@ pairing codes).
   that trip's own `photo_url` column, so re-opening or re-viewing a trip
   never re-queries Pexels — only genuinely new trips do. Falls back to a
   themed gradient while loading or when no photo exists for that name.
-- **Trip Hub** — tabbed view (Itinerary / Budget / Convert / Map / Pack) for
-  each trip.
+- **Trip Hub** — a fixed bottom tab bar (Itinerary / Budget / Convert / Map
+  / Pack), same width as the app's own phone-size frame rather than the
+  full viewport, instead of a top pill row — the standard mobile-app
+  navigation pattern.
 - **Itinerary** (`src/Itinerary.jsx`) — one day card per day of the trip,
   auto-generated from its dates, labeled with which stop that day belongs
   to on multi-stop trips; add/edit/delete time-optional plan items. A
