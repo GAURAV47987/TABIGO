@@ -558,25 +558,25 @@ function Dashboard({ session }) {
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {trips.map((t) => (
-                <button key={t.id} onClick={() => setOpenTripId(t.id)} className="text-left rounded-2xl overflow-hidden tg-card relative">
+                <div key={t.id} role="button" tabIndex={0} onClick={() => setOpenTripId(t.id)} className="text-left rounded-2xl overflow-hidden tg-card relative cursor-pointer">
                   <PlaceBanner
                     placeName={photoQuery(t)}
                     savedUrl={t.photo_url}
                     onResolved={(url) => updateTrip(t.id, { photo_url: url })}
                     height={140}
                   >
-                    <span
-                      role="button"
+                    <button
+                      type="button"
                       aria-label={`Delete ${t.destination_name}`}
                       onClick={(evt) => {
                         evt.stopPropagation();
                         setDeleteTarget(t);
                       }}
-                      className="absolute top-2 right-2 p-1.5 rounded-full"
+                      className="absolute top-2 right-2 p-1.5 rounded-full z-10"
                       style={{ background: "rgba(0,0,0,0.45)", color: "white" }}
                     >
                       <Trash2 size={14} />
-                    </span>
+                    </button>
                     <div className="absolute inset-0 flex flex-col justify-end p-3">
                       <p className="font-semibold text-sm leading-tight" style={{ color: "white" }}>{t.destination_name}</p>
                       <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
@@ -584,7 +584,7 @@ function Dashboard({ session }) {
                       </p>
                     </div>
                   </PlaceBanner>
-                </button>
+                </div>
               ))}
             </div>
           )}
