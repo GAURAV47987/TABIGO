@@ -143,6 +143,48 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
   );
 }
 
+function SetDatesPrompt({ onSet }) {
+  const [startDate, setStartDate] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!startDate) return;
+    setBusy(true);
+    await onSet(startDate);
+    setBusy(false);
+  };
+
+  return (
+    <form
+      onSubmit={submit}
+      className="p-4 rounded-2xl tg-card"
+      style={{ background: "var(--surface)", border: "1px dashed var(--tape)" }}
+    >
+      <p className="font-semibold mb-1" style={{ color: "var(--text-primary)" }}>When are you going?</p>
+      <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>
+        Add a start date to build your day-by-day itinerary.
+      </p>
+      <input
+        type="date"
+        required
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+        className="w-full mb-3 px-3 py-2 rounded-lg"
+        style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+      />
+      <button
+        type="submit"
+        disabled={busy}
+        className="w-full py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
+        style={{ color: "var(--primary-text)" }}
+      >
+        {busy ? "Saving…" : "Save dates"}
+      </button>
+    </form>
+  );
+}
+
 function DayCard({ date, dayNumber, stopName, items, onAdd, onEdit }) {
   const sorted = [...items].sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
 
@@ -184,9 +226,13 @@ function DayCard({ date, dayNumber, stopName, items, onAdd, onEdit }) {
   );
 }
 
-export default function ItineraryTab({ trip, onSave, aiSlot }) {
+export default function ItineraryTab({ trip, onSave, onSetDates, aiSlot }) {
   const [modalDate, setModalDate] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+
+  if (!trip.start_date) {
+    return <SetDatesPrompt onSet={onSetDates} />;
+  }
 
   const items = trip.itinerary || [];
   const days = enumerateDates(trip.start_date, trip.end_date);

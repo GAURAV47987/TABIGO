@@ -83,8 +83,8 @@ export async function createTrip({ destinationName, lat, lng, startDate, endDate
       destination_name: destinationName,
       destination_lat: lat,
       destination_lng: lng,
-      start_date: startDate,
-      end_date: endDate,
+      start_date: startDate || null,
+      end_date: endDate || null,
       home_currency: homeCurrency || "USD",
       stops: stops || [],
       itinerary: [],
@@ -102,7 +102,7 @@ export async function listTrips() {
   const { data, error } = await supabase
     .from("trips")
     .select("id, destination_name, destination_lat, destination_lng, start_date, end_date, stops, photo_url, created_at")
-    .order("start_date", { ascending: true });
+    .order("start_date", { ascending: true, nullsFirst: false });
   if (error) throw error;
   return data;
 }

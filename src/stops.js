@@ -6,8 +6,12 @@ function addDays(dateStr, n) {
 
 // Turns [{name, lat, lng, days}] into dated stops, sequenced back-to-back
 // starting at startDate (stop 1 gets days 1..N, stop 2 picks up right
-// after, etc).
+// after, etc). With no startDate yet, stops keep their names/days but no
+// dates — the trip can still be created and dated later.
 export function buildDatedStops(rawStops, startDate) {
+  if (!startDate) {
+    return rawStops.map((s) => ({ id: crypto.randomUUID(), name: s.name, lat: s.lat, lng: s.lng, days: s.days, startDate: null, endDate: null }));
+  }
   let cursor = startDate;
   return rawStops.map((s) => {
     const stopStart = cursor;

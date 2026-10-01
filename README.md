@@ -41,9 +41,13 @@ pairing codes).
   (4) *Popular add-ons* — Gemini suggests genuinely worth-visiting places
   near your first stop, shown as tappable stamp cards with a one-line
   reason each, instead of a plain list — tap to add or remove from the
-  route, then create the trip. A trip is a sequence of one or more
-  **stops** (`src/stops.js`): the wizard sequences each stop's dates
-  automatically from the trip's start date. Free-typed text with no
+  route, then create the trip. The start date is optional — not sure yet?
+  Skip it and create the trip anyway; the Itinerary tab will ask for a
+  start date the first time you open it, and sets every stop's dates
+  automatically from the day counts you already gave them, same as the
+  wizard would have. A trip is a sequence of one or more **stops**
+  (`src/stops.js`): the wizard sequences each stop's dates automatically
+  from the trip's start date, once it has one. Free-typed text with no
   autocomplete pick falls back to geocoding via OpenStreetMap's Nominatim
   (`src/geocode.js`) at continue time. A single-stop trip works exactly
   like a single destination; multi-stop trips (e.g. an Athens → Paris →

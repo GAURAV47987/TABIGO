@@ -349,10 +349,9 @@ export default function NewTripWizard({ onClose, onCreated }) {
                 style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
               />
 
-              <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Start date</label>
+              <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Start date (optional)</label>
               <input
                 type="date"
-                required
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="w-full mb-1 px-3 py-2 rounded-lg"
@@ -361,7 +360,11 @@ export default function NewTripWizard({ onClose, onCreated }) {
               {climateNote && (
                 <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>☀ {climateNote}</p>
               )}
-              {!climateNote && <div className="mb-3" />}
+              {!climateNote && (
+                <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+                  Not sure yet? Skip this — you can add dates later from the trip's Itinerary tab.
+                </p>
+              )}
 
               <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Home currency (for budget totals)</label>
               <select
@@ -465,7 +468,6 @@ export default function NewTripWizard({ onClose, onCreated }) {
             <button
               type="button"
               onClick={() => setStep(4)}
-              disabled={!startDate}
               className="flex-1 py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
               style={{ color: "var(--primary-text)" }}
             >

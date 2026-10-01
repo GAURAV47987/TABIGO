@@ -17,7 +17,7 @@ import {
 } from "./supabase";
 import { Plus, Trash2, User, Calendar, Wallet, ArrowLeftRight, Map as MapIcon, Luggage, Compass } from "lucide-react";
 import { enumerateDates } from "./dates";
-import { getEffectiveStops } from "./stops";
+import { buildDatedStops, getEffectiveStops } from "./stops";
 import { isAdmin } from "./admin";
 import NewTripWizard from "./NewTripWizard";
 import ItineraryTab from "./Itinerary";
@@ -31,6 +31,10 @@ import { PlaceBanner } from "./PlacePhoto";
 // Wikipedia page, so photos always key off the first stop's plain name.
 function photoQuery(trip) {
   return getEffectiveStops(trip)[0]?.name || trip.destination_name;
+}
+
+function dateRangeLabel(start, end) {
+  return start && end ? `${start} — ${end}` : "Dates not set yet";
 }
 
 function AuthScreen() {
@@ -211,6 +215,17 @@ function TripHub({ tripId, onBack }) {
     updateTrip(tripId, { [field]: value });
   };
 
+  // Trips can be created without dates (see NewTripWizard); this lets the
+  // Itinerary tab add them later, re-sequencing each stop's dates from the
+  // same day counts it already had.
+  const setTripDates = async (startDate) => {
+    const stops = getEffectiveStops(trip).map((s) => ({ name: s.name, lat: s.lat, lng: s.lng, days: s.days || 1 }));
+    const dated = buildDatedStops(stops, startDate);
+    const endDate = dated[dated.length - 1]?.endDate || null;
+    setTrip((t) => ({ ...t, start_date: startDate, end_date: endDate, stops: dated }));
+    await updateTrip(tripId, { start_date: startDate, end_date: endDate, stops: dated });
+  };
+
   return (
     <div className="min-h-screen px-4 pt-6" style={{ background: "var(--bg)", paddingBottom: 100 }}>
       <button onClick={onBack} className="mb-4 text-sm underline" style={{ color: "var(--text-secondary)" }}>
@@ -230,7 +245,7 @@ function TripHub({ tripId, onBack }) {
         <div className="absolute inset-0 flex flex-col justify-end p-4">
           <h1 className="text-2xl font-bold" style={{ color: "white" }}>{trip.destination_name}</h1>
           <p className="text-sm" style={{ color: "rgba(255,255,255,0.85)" }}>
-            {trip.start_date} — {trip.end_date}
+            {dateRangeLabel(trip.start_date, trip.end_date)}
           </p>
           {getEffectiveStops(trip).length > 1 && (
             <p className="text-sm" style={{ color: "rgba(255,255,255,0.75)" }}>
@@ -244,6 +259,7 @@ function TripHub({ tripId, onBack }) {
         <ItineraryTab
           trip={trip}
           onSave={save("itinerary")}
+          onSetDates={setTripDates}
           aiSlot={
             <AIGenerateCard
               trip={trip}
@@ -306,7 +322,7 @@ function AdminPanel({ onBack }) {
             <div key={t.id} className="p-4 rounded-2xl tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
               <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{t.destination_name}</p>
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                {t.start_date} — {t.end_date}
+                {dateRangeLabel(t.start_date, t.end_date)}
               </p>
               <p className="text-sm mt-1" style={{ color: "var(--text-tertiary)" }}>{t.user_email}</p>
             </div>
@@ -580,7 +596,7 @@ function Dashboard({ session }) {
                     <div className="absolute inset-0 flex flex-col justify-end p-3">
                       <p className="font-semibold text-sm leading-tight" style={{ color: "white" }}>{t.destination_name}</p>
                       <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
-                        {t.start_date} — {t.end_date}
+                        {dateRangeLabel(t.start_date, t.end_date)}
                       </p>
                     </div>
                   </PlaceBanner>

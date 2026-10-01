@@ -9,6 +9,10 @@ export default function PackingTab({ trip, onSave }) {
   const [climate, setClimate] = useState(undefined); // undefined = loading, null = unavailable
 
   useEffect(() => {
+    if (!trip.start_date) {
+      setClimate(null);
+      return;
+    }
     let cancelled = false;
     setClimate(undefined);
     getTripClimate(trip.destination_lat, trip.destination_lng, trip.start_date, trip.end_date)
@@ -37,7 +41,9 @@ export default function PackingTab({ trip, onSave }) {
   const toggle = (key) => onSave({ ...checklist, [key]: !checklist[key] });
 
   const climateNote =
-    climate === undefined
+    !trip.start_date
+      ? "Add your trip dates in the Itinerary tab to get a climate-aware packing list."
+      : climate === undefined
       ? "Checking the weather for this trip…"
       : climate === null || climate.avgHigh == null
       ? "Couldn't get weather data for this destination — showing a general list."
