@@ -26,6 +26,7 @@ import ConverterTab from "./Converter";
 import PackingTab from "./Packing";
 import TripMap from "./TripMap";
 import { PlaceBanner } from "./PlacePhoto";
+import tabigoLogo from "./assets/tabigo-logo.webp";
 
 // A joined multi-stop label ("Athens → Paris") won't resolve to any one
 // Wikipedia page, so photos always key off the first stop's plain name.
@@ -88,7 +89,7 @@ function AuthScreen() {
         className="w-full max-w-sm p-6 rounded-2xl tg-card"
         style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
       >
-        <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>TABIGO</h1>
+        <img src={tabigoLogo} alt="TABIGO" className="h-10 w-auto mb-2" />
         <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>Plan any trip, anywhere.</p>
 
         <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Email</label>
@@ -532,7 +533,7 @@ function Dashboard({ session }) {
   return (
     <div className="min-h-screen px-4 pt-6" style={{ background: "var(--bg)", paddingBottom: 100 }}>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>TABIGO</h1>
+        <img src={tabigoLogo} alt="TABIGO" className="h-8 w-auto" />
         <div className="flex items-center gap-4">
           {isAdmin(session) && (
             <button onClick={() => setShowAdmin(true)} className="text-sm underline" style={{ color: "var(--stamp)" }}>

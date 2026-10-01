@@ -7,6 +7,12 @@ pairing codes).
 
 ## What's here so far
 
+- **Logo** (`src/assets/tabigo-logo.webp`) — shown on the sign-in screen
+  and the Dashboard header in place of the plain "TABIGO" text. Not yet
+  used as the actual installed-app icon (`vite.config.js`'s PWA
+  `manifest.icons` is still empty) — the wordmark is a wide horizontal
+  lockup, not a square mark, so that'd want a separate cropped icon
+  variant.
 - **Real accounts** — email/password signup and sign-in via Supabase Auth
   (`src/supabase.js`), with email confirmation.
 - **Profile screen** — shows the signed-in email and member-since date, a
