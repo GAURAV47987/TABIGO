@@ -16,7 +16,7 @@ import {
   listAllTripsAsAdmin,
   generateItinerary,
 } from "./supabase";
-import { Plus, Trash2, User, Calendar, Wallet, ArrowLeftRight, Map as MapIcon, Luggage } from "lucide-react";
+import { Plus, Trash2, User, Calendar, Wallet, ArrowLeftRight, Map as MapIcon, Luggage, Compass } from "lucide-react";
 import { enumerateDates } from "./dates";
 import { geocodeDestination } from "./geocode";
 import { searchPlaces } from "./geonames";
@@ -716,6 +716,7 @@ function ProfilePanel({ session, onBack }) {
 }
 
 function Dashboard({ session }) {
+  const [homeTab, setHomeTab] = useState("home");
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -750,7 +751,7 @@ function Dashboard({ session }) {
   }
 
   return (
-    <div className="min-h-screen px-4 py-6" style={{ background: "var(--bg)" }}>
+    <div className="min-h-screen px-4 pt-6" style={{ background: "var(--bg)", paddingBottom: 100 }}>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>TABIGO</h1>
         <div className="flex items-center gap-4">
@@ -770,52 +771,61 @@ function Dashboard({ session }) {
         </div>
       </div>
 
-      <button
-        onClick={() => setShowNewTrip(true)}
-        className="w-full mb-6 py-3 rounded-xl font-semibold tg-btn tg-btn-primary"
-        style={{ color: "var(--primary-text)" }}
-      >
-        + New trip
-      </button>
-
-      {loading ? (
-        <p style={{ color: "var(--text-body)" }}>Loading…</p>
-      ) : loadError ? (
-        <p style={{ color: "var(--stamp)" }}>Couldn't load your trips: {loadError}</p>
-      ) : trips.length === 0 ? (
-        <p style={{ color: "var(--text-secondary)" }}>No trips yet — plan your first one above.</p>
-      ) : (
-        <div className="grid grid-cols-2 gap-3">
-          {trips.map((t) => (
-            <button key={t.id} onClick={() => setOpenTripId(t.id)} className="text-left rounded-2xl overflow-hidden tg-card relative">
-              <PlaceBanner
-                placeName={photoQuery(t)}
-                savedUrl={t.photo_url}
-                onResolved={(url) => updateTrip(t.id, { photo_url: url })}
-                height={140}
-              >
-                <span
-                  role="button"
-                  aria-label={`Delete ${t.destination_name}`}
-                  onClick={(evt) => {
-                    evt.stopPropagation();
-                    setDeleteTarget(t);
-                  }}
-                  className="absolute top-2 right-2 p-1.5 rounded-full"
-                  style={{ background: "rgba(0,0,0,0.45)", color: "white" }}
-                >
-                  <Trash2 size={14} />
-                </span>
-                <div className="absolute inset-0 flex flex-col justify-end p-3">
-                  <p className="font-semibold text-sm leading-tight" style={{ color: "white" }}>{t.destination_name}</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
-                    {t.start_date} — {t.end_date}
-                  </p>
-                </div>
-              </PlaceBanner>
-            </button>
-          ))}
+      {homeTab === "home" && (
+        <div className="flex flex-col items-center justify-center text-center" style={{ minHeight: "55vh" }}>
+          <p style={{ color: "var(--text-secondary)" }}>Your next adventure starts here.</p>
         </div>
+      )}
+
+      {homeTab === "explore" && (
+        <div className="flex flex-col items-center justify-center text-center" style={{ minHeight: "55vh" }}>
+          <Compass size={40} style={{ color: "var(--icon-empty)" }} />
+          <p className="mt-3" style={{ color: "var(--text-secondary)" }}>Explore is coming soon.</p>
+        </div>
+      )}
+
+      {homeTab === "trips" && (
+        <>
+          {loading ? (
+            <p style={{ color: "var(--text-body)" }}>Loading…</p>
+          ) : loadError ? (
+            <p style={{ color: "var(--stamp)" }}>Couldn't load your trips: {loadError}</p>
+          ) : trips.length === 0 ? (
+            <p style={{ color: "var(--text-secondary)" }}>No trips yet — tap + below to plan your first one.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {trips.map((t) => (
+                <button key={t.id} onClick={() => setOpenTripId(t.id)} className="text-left rounded-2xl overflow-hidden tg-card relative">
+                  <PlaceBanner
+                    placeName={photoQuery(t)}
+                    savedUrl={t.photo_url}
+                    onResolved={(url) => updateTrip(t.id, { photo_url: url })}
+                    height={140}
+                  >
+                    <span
+                      role="button"
+                      aria-label={`Delete ${t.destination_name}`}
+                      onClick={(evt) => {
+                        evt.stopPropagation();
+                        setDeleteTarget(t);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 rounded-full"
+                      style={{ background: "rgba(0,0,0,0.45)", color: "white" }}
+                    >
+                      <Trash2 size={14} />
+                    </span>
+                    <div className="absolute inset-0 flex flex-col justify-end p-3">
+                      <p className="font-semibold text-sm leading-tight" style={{ color: "white" }}>{t.destination_name}</p>
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
+                        {t.start_date} — {t.end_date}
+                      </p>
+                    </div>
+                  </PlaceBanner>
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {deleteTarget && (
@@ -862,13 +872,42 @@ function Dashboard({ session }) {
       {showNewTrip && (
         <NewTripModal
           onClose={() => setShowNewTrip(false)}
-          onCreated={(trip) => {
+          onCreated={() => {
             setShowNewTrip(false);
             refresh();
-            setOpenTripId(trip.id);
+            setHomeTab("trips");
           }}
         />
       )}
+
+      <div className="tg-bottom-nav flex items-center justify-around">
+        <button
+          onClick={() => setHomeTab("trips")}
+          className="flex-1 flex flex-col items-center gap-0.5 py-2"
+          style={{ color: homeTab === "trips" ? "var(--stamp)" : "var(--text-muted)" }}
+        >
+          <Luggage size={20} strokeWidth={homeTab === "trips" ? 2.5 : 2} />
+          <span className="text-[11px] font-medium">Trips</span>
+        </button>
+
+        <button
+          onClick={() => setShowNewTrip(true)}
+          aria-label="Create new trip"
+          className="flex items-center justify-center rounded-full tg-btn tg-btn-primary shrink-0"
+          style={{ width: 56, height: 56, marginTop: -28, color: "var(--primary-text)" }}
+        >
+          <Plus size={26} strokeWidth={2.5} />
+        </button>
+
+        <button
+          onClick={() => setHomeTab("explore")}
+          className="flex-1 flex flex-col items-center gap-0.5 py-2"
+          style={{ color: homeTab === "explore" ? "var(--stamp)" : "var(--text-muted)" }}
+        >
+          <Compass size={20} strokeWidth={homeTab === "explore" ? 2.5 : 2} />
+          <span className="text-[11px] font-medium">Explore</span>
+        </button>
+      </div>
     </div>
   );
 }

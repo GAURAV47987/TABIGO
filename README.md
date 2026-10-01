@@ -22,6 +22,14 @@ pairing codes).
 - **Multi-trip, any-destination data model** — a `trips` table (one row per
   trip, owned by a `user_id`, gated by Row Level Security so a user can only
   ever see their own trips), instead of one hardcoded itinerary.
+- **Home screen** — its own fixed bottom bar: **Trips** (your trip list,
+  moved out of being the default view into its own tab), a raised center
+  **+** button (opens New Trip from anywhere, then lands you on the Trips
+  tab with the new one in it, rather than opening it directly), and
+  **Explore** (placeholder for now — future destination-browsing ideas).
+  The actual home tab is intentionally empty for the moment, reserved for
+  whatever lands there later (a stats/travel-journal view is one idea
+  discussed).
 - **New trip flow** — a trip is a sequence of one or more **stops**
   (`src/stops.js`): name each stop and how many days there, in order, and
   the app sequences their dates automatically from the trip's start date.
