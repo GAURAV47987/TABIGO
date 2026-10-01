@@ -30,19 +30,27 @@ pairing codes).
   The actual home tab is intentionally empty for the moment, reserved for
   whatever lands there later (a stats/travel-journal view is one idea
   discussed).
-- **New trip flow** — a trip is a sequence of one or more **stops**
-  (`src/stops.js`): name each stop and how many days there, in order, and
-  the app sequences their dates automatically from the trip's start date.
-  Typing into a stop shows a live autocomplete dropdown (`src/geonames.js`,
-  GeoNames) — type a city for direct matches, or a whole country ("Japan")
-  to see its biggest cities sorted by population, and tap one instead of
-  typing blind; free-typed text with no pick falls back to geocoding via
-  OpenStreetMap's Nominatim (`src/geocode.js`) at submit time. A
-  single-stop trip works exactly like a single destination; multi-stop
-  trips (e.g. an Athens → Paris → Amsterdam Europe trip) get a per-day
-  city label in the Itinerary and a route line on the Map. Older trips
-  created before this existed still work — they're treated as one
-  implicit stop spanning their original dates.
+- **New trip wizard** (`src/NewTripWizard.jsx`) — a 4-step flow instead of
+  one long form: (1) *Where are you going?* — type a city, or a whole
+  country to see its biggest cities (`src/geonames.js`); (2) *Your route*
+  — a destination photo with a passport-style "stamp" overlay, plus a
+  connected-dot **journey strip** for the stop sequence (tweak days per
+  stop or add more stops right there); (3) *When are you going?* — start
+  date, home currency, and a live climate chip ("☀ Expect around 24°C,
+  mostly dry") computed the moment a date is picked (`src/weather.js`);
+  (4) *Popular add-ons* — Gemini suggests genuinely worth-visiting places
+  near your first stop, shown as tappable stamp cards with a one-line
+  reason each, instead of a plain list — tap to add or remove from the
+  route, then create the trip. A trip is a sequence of one or more
+  **stops** (`src/stops.js`): the wizard sequences each stop's dates
+  automatically from the trip's start date. Free-typed text with no
+  autocomplete pick falls back to geocoding via OpenStreetMap's Nominatim
+  (`src/geocode.js`) at continue time. A single-stop trip works exactly
+  like a single destination; multi-stop trips (e.g. an Athens → Paris →
+  Amsterdam Europe trip) get a per-day city label in the Itinerary and a
+  route line on the Map. Older trips created before this existed still
+  work — they're treated as one implicit stop spanning their original
+  dates.
 - **Postcard Journal theme** — ported as-is from the personal app
   (`src/index.css`): kraft-paper background, ink-navy/stamp-red/tape-gold
   accents, light/dark mode tokens.

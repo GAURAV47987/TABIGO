@@ -46,6 +46,15 @@ Respond with ONLY valid JSON, no markdown, no commentary, in exactly this shape:
 Valid "type" values: "activity", "food", "photo". Keep "notes" to one short sentence (can be an empty string). Do not include days beyond ${numDays}.`;
 }
 
+function buildSuggestPrompt(destination: string) {
+  return `You are a well-traveled local guide. Someone is planning a trip and has chosen "${destination}" as a stop. Suggest 6 genuinely worth-visiting places — towns, neighborhoods, or day-trip destinations — within or near ${destination} that a first-time visitor would want to consider adding to their route.
+
+For each, give its real, specific name (something a map/search service would recognize) and one short, specific sentence on why it's worth visiting — not generic ("beautiful scenery") but a concrete reason (what you'd actually see or do there).
+
+Respond with ONLY valid JSON, no markdown, no commentary, in exactly this shape:
+{"places":[{"name":"...","reason":"..."}]}`;
+}
+
 async function callGemini(prompt: string) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
   const res = await fetch(url, {
@@ -87,6 +96,18 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
+
+    if (body.mode === "suggest_places") {
+      const destination = String(body.destination || "").slice(0, 200);
+      if (!destination) throw new Error("Missing destination");
+      const raw = await callGemini(buildSuggestPrompt(destination));
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed.places)) throw new Error("Unexpected response shape");
+      return new Response(JSON.stringify(parsed), {
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      });
+    }
+
     const stops = Array.isArray(body.stops)
       ? body.stops
           .map((s: any) => ({ name: String(s?.name || "").slice(0, 200), days: Math.max(1, Math.round(Number(s?.days) || 1)) }))

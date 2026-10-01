@@ -143,6 +143,15 @@ export async function generateItinerary({ stops }) {
   return data; // { days: [{ day, items: [{ time, title, notes, type }] }] }
 }
 
+export async function suggestPopularPlaces(destination) {
+  const { data, error } = await supabase.functions.invoke("rapid-function", {
+    body: { mode: "suggest_places", destination },
+  });
+  if (error) throw await friendlyFunctionError(error);
+  if (data?.error) throw new Error(data.error);
+  return data.places; // [{ name, reason }]
+}
+
 export async function updateTrip(id, fields) {
   const { error } = await supabase
     .from("trips")
