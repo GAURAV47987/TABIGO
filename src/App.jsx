@@ -6,6 +6,7 @@ import {
   signUp,
   signOut,
   changePassword,
+  resetPasswordForEmail,
   getAvatarUrl,
   uploadAvatar,
   listTrips,
@@ -48,6 +49,7 @@ function AuthScreen() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmSent, setConfirmSent] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -60,6 +62,20 @@ function AuthScreen() {
       } else {
         await signIn(email, password);
       }
+    } catch (err) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitForgot = async (e) => {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    try {
+      await resetPasswordForEmail(email);
+      setResetSent(true);
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -81,6 +97,74 @@ function AuthScreen() {
             Back to sign in
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (mode === "forgot") {
+    if (resetSent) {
+      return (
+        <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg)" }}>
+          <div className="max-w-sm text-center p-6 rounded-2xl tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <h1 className="text-xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>Check your email</h1>
+            <p style={{ color: "var(--text-body)" }}>
+              If an account exists for {email}, we sent a link to reset your password. Open it on this device, set a
+              new password, then come back here and sign in.
+            </p>
+            <button
+              className="mt-4 underline"
+              style={{ color: "var(--text-secondary)" }}
+              onClick={() => { setResetSent(false); setMode("signin"); }}
+            >
+              Back to sign in
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg)" }}>
+        <form
+          onSubmit={submitForgot}
+          className="w-full max-w-sm p-6 rounded-2xl tg-card"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+        >
+          <h1 className="text-xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>Reset your password</h1>
+          <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
+            Enter your account email and we'll send you a link to set a new password.
+          </p>
+
+          <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full mb-4 px-3 py-2 rounded-lg"
+            style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+          />
+
+          {error && <p className="text-sm mb-3" style={{ color: "var(--stamp)" }}>{error}</p>}
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full py-2.5 rounded-lg font-semibold mb-3 tg-btn tg-btn-primary"
+            style={{ color: "var(--primary-text)" }}
+          >
+            {busy ? "Please wait…" : "Send reset link"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setError(""); setMode("signin"); }}
+            className="w-full text-sm underline"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Back to sign in
+          </button>
+        </form>
       </div>
     );
   }
@@ -126,6 +210,17 @@ function AuthScreen() {
         >
           {busy ? "Please wait…" : mode === "signup" ? "Sign up" : "Sign in"}
         </button>
+
+        {mode === "signin" && (
+          <button
+            type="button"
+            onClick={() => { setError(""); setMode("forgot"); }}
+            className="w-full text-sm underline mb-3"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Forgot password?
+          </button>
+        )}
 
         <button
           type="button"
@@ -735,16 +830,122 @@ function Dashboard({ session }) {
   );
 }
 
+// Reached only via a password-reset email link, which hands us a temporary
+// recovery session (see resetPasswordForEmail / the PASSWORD_RECOVERY event
+// below). changePassword works the same way against this session as it
+// does for a normal signed-in user changing their password from Profile.
+function ResetPasswordScreen({ onDone }) {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Passwords don't match");
+      return;
+    }
+    setBusy(true);
+    try {
+      await changePassword(newPassword);
+      setDone(true);
+    } catch (err) {
+      setError(err.message || "Could not update password");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg)" }}>
+        <div className="max-w-sm text-center p-6 rounded-2xl tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <h1 className="text-xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>Password updated</h1>
+          <p className="mb-4" style={{ color: "var(--text-body)" }}>You're all set.</p>
+          <button
+            onClick={onDone}
+            className="w-full py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
+            style={{ color: "var(--primary-text)" }}
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg)" }}>
+      <form
+        onSubmit={submit}
+        className="w-full max-w-sm p-6 rounded-2xl tg-card"
+        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+      >
+        <h1 className="text-xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>Set a new password</h1>
+        <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>Choose a new password for your account.</p>
+
+        <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>New password</label>
+        <input
+          type="password"
+          required
+          minLength={6}
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="w-full mb-3 px-3 py-2 rounded-lg"
+          style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+        />
+
+        <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Confirm new password</label>
+        <input
+          type="password"
+          required
+          minLength={6}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className="w-full mb-4 px-3 py-2 rounded-lg"
+          style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+        />
+
+        {error && <p className="text-sm mb-3" style={{ color: "var(--stamp)" }}>{error}</p>}
+
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
+          style={{ color: "var(--primary-text)" }}
+        >
+          {busy ? "Updating…" : "Update password"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export default function App() {
   const [session, setSession] = useState(undefined);
+  const [recovery, setRecovery] = useState(false);
 
   useEffect(() => {
     getSession().then(setSession);
-    return onAuthStateChange(setSession);
+    return onAuthStateChange((event, newSession) => {
+      if (event === "PASSWORD_RECOVERY") setRecovery(true);
+      setSession(newSession);
+    });
   }, []);
 
   if (session === undefined) {
     return <div className="min-h-screen" style={{ background: "var(--bg)" }} />;
+  }
+
+  if (recovery) {
+    return <ResetPasswordScreen onDone={() => setRecovery(false)} />;
   }
 
   return session ? <Dashboard session={session} /> : <AuthScreen />;

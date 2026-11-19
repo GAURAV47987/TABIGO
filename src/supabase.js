@@ -29,6 +29,16 @@ export async function changePassword(newPassword) {
   if (error) throw error;
 }
 
+// Sends a reset-password email whose link lands back on this same deployed
+// page (works for github.io now and any custom domain later) and opens a
+// temporary recovery session there — see onAuthStateChange below.
+export async function resetPasswordForEmail(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname,
+  });
+  if (error) throw error;
+}
+
 const AVATARS_BUCKET = "avatars";
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -65,7 +75,7 @@ export async function getSession() {
 export function onAuthStateChange(callback) {
   const {
     data: { subscription },
-  } = supabase.auth.onAuthStateChange((_event, session) => callback(session));
+  } = supabase.auth.onAuthStateChange((event, session) => callback(event, session));
   return () => subscription.unsubscribe();
 }
 
