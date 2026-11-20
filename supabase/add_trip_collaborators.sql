@@ -44,25 +44,46 @@ create policy "trip_collaborators_invitee_select" on public.trip_collaborators
     user_id = auth.uid() or lower(invited_email) = lower(auth.jwt() ->> 'email')
   );
 
+-- trips' own SELECT policy used to query trip_collaborators directly, and
+-- trip_collaborators_owner_select (above) queries trips right back —
+-- two RLS policies each reading the other's protected table is a cycle,
+-- and Postgres refuses it outright ("infinite recursion detected in
+-- policy for relation trips"), which broke trip creation entirely for
+-- every user, not just shared trips. A SECURITY DEFINER function breaks
+-- the cycle: its own query against trip_collaborators runs as the
+-- function's owner, which bypasses that table's RLS instead of
+-- re-evaluating it, so checking collaborator status from inside trips'
+-- policy no longer loops back through trip_collaborators' policies.
+create or replace function public.is_trip_collaborator(p_trip_id uuid, p_role text default null)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.trip_collaborators
+    where trip_id = p_trip_id and user_id = auth.uid() and status = 'accepted'
+      and (p_role is null or role = p_role)
+  );
+$$;
+revoke all on function public.is_trip_collaborator(uuid, text) from public, anon;
+grant execute on function public.is_trip_collaborator(uuid, text) to authenticated;
+
 -- A shared trip is visible/editable the same way an owned one is, once
 -- the invite has actually been accepted (not merely sent).
 drop policy if exists "trips_select_own" on public.trips;
 drop policy if exists "trips_select_own_or_shared" on public.trips;
 create policy "trips_select_own_or_shared" on public.trips
   for select using (
-    auth.uid() = user_id
-    or id in (select trip_id from public.trip_collaborators where user_id = auth.uid() and status = 'accepted')
+    auth.uid() = user_id or public.is_trip_collaborator(id)
   );
 
 drop policy if exists "trips_update_own" on public.trips;
 drop policy if exists "trips_update_own_or_editor" on public.trips;
 create policy "trips_update_own_or_editor" on public.trips
   for update using (
-    auth.uid() = user_id
-    or id in (
-      select trip_id from public.trip_collaborators
-      where user_id = auth.uid() and status = 'accepted' and role = 'editor'
-    )
+    auth.uid() = user_id or public.is_trip_collaborator(id, 'editor')
   );
 
 -- Document storage: extend the existing owner-only policies so an editor
