@@ -4,7 +4,7 @@ import { buildPackingCategories } from "./constants";
 import { getTripClimate } from "./weather";
 import { Section, ChecklistRow, ProgressRing } from "./ui";
 
-export default function PackingTab({ trip, onSave }) {
+export default function PackingTab({ trip, onSave, canEdit = true }) {
   const checklist = trip.packing || {};
   const [climate, setClimate] = useState(undefined); // undefined = loading, null = unavailable
 
@@ -38,7 +38,10 @@ export default function PackingTab({ trip, onSave }) {
 
   const pct = totalItems > 0 ? (checkedCount / totalItems) * 100 : 0;
 
-  const toggle = (key) => onSave({ ...checklist, [key]: !checklist[key] });
+  const toggle = (key) => {
+    if (!canEdit) return;
+    onSave({ ...checklist, [key]: !checklist[key] });
+  };
 
   const climateNote =
     !trip.start_date

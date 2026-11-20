@@ -15,8 +15,18 @@ import {
   deleteTrip,
   listAllTripsAsAdmin,
   generateItinerary,
+  getCurrentUserId,
+  getMyTripRole,
+  inviteTripCollaborator,
+  updateCollaboratorRole,
+  removeCollaborator,
+  listTripCollaborators,
+  listMyPendingInvites,
+  acceptTripInvite,
+  declineTripInvite,
+  leaveTrip,
 } from "./supabase";
-import { Plus, Trash2, User, Calendar, Wallet, ArrowLeftRight, Map as MapIcon, Luggage, Compass } from "lucide-react";
+import { Plus, Trash2, User, Calendar, Wallet, ArrowLeftRight, Map as MapIcon, Luggage, Compass, Users, Mail, UserPlus } from "lucide-react";
 import { enumerateDates } from "./dates";
 import { buildDatedStops, getEffectiveStops } from "./stops";
 import { isAdmin } from "./admin";
@@ -291,6 +301,211 @@ function AIGenerateCard({ trip, onGenerated }) {
   );
 }
 
+function ShareModal({ tripId, destinationName, onClose }) {
+  const [collaborators, setCollaborators] = useState(null);
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("editor");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const refresh = () => {
+    listTripCollaborators(tripId)
+      .then(setCollaborators)
+      .catch((err) => setError(err.message || "Could not load who has access"));
+  };
+
+  useEffect(refresh, [tripId]);
+
+  const invite = async (e) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    setBusy(true);
+    setError("");
+    try {
+      await inviteTripCollaborator(tripId, trimmed, role);
+      setEmail("");
+      refresh();
+    } catch (err) {
+      setError(err.message || "Could not send that invite");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const changeRole = (c) => {
+    updateCollaboratorRole(c.id, c.role === "editor" ? "viewer" : "editor")
+      .then(refresh)
+      .catch((err) => alert(err.message || "Couldn't change role"));
+  };
+
+  const remove = (c) => {
+    if (!window.confirm(`${c.email} will no longer be able to see this trip. Remove them?`)) return;
+    removeCollaborator(c.id)
+      .then(refresh)
+      .catch((err) => alert(err.message || "Couldn't remove"));
+  };
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center px-4 z-50" style={{ background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
+      <div
+        className="w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl p-6 tg-card"
+        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>Share trip</h2>
+          <button onClick={onClose} style={{ color: "var(--text-tertiary)" }}>✕</button>
+        </div>
+        <p className="text-sm mb-4 truncate" style={{ color: "var(--text-secondary)" }}>{destinationName}</p>
+
+        <form onSubmit={invite} className="p-4 rounded-xl mb-5" style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
+          <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Invite by email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="someone@example.com"
+            className="w-full mb-3 px-3 py-2 rounded-lg"
+            style={{ border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-body)" }}
+          />
+          <div className="flex gap-2 mb-3">
+            <button
+              type="button"
+              onClick={() => setRole("editor")}
+              className="flex-1 py-2 rounded-lg text-sm font-medium tg-btn"
+              style={role === "editor" ? { background: "var(--primary-bg)", color: "var(--primary-text)" } : { background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-body)" }}
+            >
+              Can edit
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole("viewer")}
+              className="flex-1 py-2 rounded-lg text-sm font-medium tg-btn"
+              style={role === "viewer" ? { background: "var(--primary-bg)", color: "var(--primary-text)" } : { background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-body)" }}
+            >
+              View only
+            </button>
+          </div>
+          {error && <p className="text-sm mb-3" style={{ color: "var(--stamp)" }}>{error}</p>}
+          <button
+            type="submit"
+            disabled={busy || !email.trim()}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold tg-btn tg-btn-stamp"
+            style={{ color: "white", opacity: busy || !email.trim() ? 0.6 : 1 }}
+          >
+            <UserPlus size={16} /> {busy ? "Sending…" : "Send invite"}
+          </button>
+        </form>
+
+        <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-primary)" }}>Who has access</p>
+        {collaborators === null ? (
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Loading…</p>
+        ) : collaborators.length === 0 ? (
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Just you so far.</p>
+        ) : (
+          <div className="space-y-2">
+            {collaborators.map((c) => (
+              <div key={c.id} className="flex items-center gap-2 p-3 rounded-xl tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{c.email}</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    {c.status === "pending" ? "Invited — not yet accepted" : c.status === "declined" ? "Declined" : "Has access"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => changeRole(c)}
+                  className="text-xs px-2.5 py-1.5 rounded-full shrink-0"
+                  style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text-body)" }}
+                >
+                  {c.role === "editor" ? "Can edit" : "View only"}
+                </button>
+                <button onClick={() => remove(c)} style={{ color: "var(--stamp)" }}>
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PendingInvites({ onAccepted }) {
+  const [invites, setInvites] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+
+  const refresh = () => {
+    listMyPendingInvites()
+      .then(setInvites)
+      .catch(() => setInvites([]));
+  };
+
+  useEffect(refresh, []);
+
+  const accept = async (invite) => {
+    setBusyId(invite.collaborator_id);
+    try {
+      await acceptTripInvite(invite.trip_id);
+      refresh();
+      onAccepted?.(invite.trip_id);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const decline = async (invite) => {
+    setBusyId(invite.collaborator_id);
+    try {
+      await declineTripInvite(invite.trip_id);
+      refresh();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (!invites || invites.length === 0) return null;
+
+  return (
+    <div className="space-y-2 mb-5">
+      {invites.map((invite) => (
+        <div key={invite.collaborator_id} className="flex gap-3 p-3.5 rounded-xl tg-card" style={{ background: "var(--surface)", border: "1px solid var(--stamp)" }}>
+          <Mail size={16} style={{ color: "var(--stamp)", marginTop: 2, flexShrink: 0 }} />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm" style={{ color: "var(--text-body)" }}>
+              <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{invite.invited_by_email}</span> invited you to{" "}
+              <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{invite.destination_name}</span> as{" "}
+              {invite.role === "editor" ? "an editor" : "a viewer"}
+            </p>
+            {busyId === invite.collaborator_id ? (
+              <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>Working…</p>
+            ) : (
+              <div className="flex gap-2 mt-2.5">
+                <button
+                  onClick={() => accept(invite)}
+                  className="px-3.5 py-1.5 rounded-lg text-sm font-semibold tg-btn tg-btn-stamp"
+                  style={{ color: "white" }}
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => decline(invite)}
+                  className="px-3.5 py-1.5 rounded-lg text-sm font-medium tg-btn"
+                  style={{ border: "1px solid var(--border)", color: "var(--text-body)", background: "var(--bg)" }}
+                >
+                  Decline
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const TRIP_TABS = [
   { id: "itinerary", label: "Itinerary", icon: Calendar },
   { id: "budget", label: "Budget", icon: Wallet },
@@ -302,14 +517,21 @@ const TRIP_TABS = [
 function TripHub({ tripId, onBack }) {
   const [trip, setTrip] = useState(null);
   const [tab, setTab] = useState("itinerary");
+  const [role, setRole] = useState("owner");
+  const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
-    getTrip(tripId).then(setTrip);
+    getTrip(tripId).then((t) => {
+      setTrip(t);
+      getMyTripRole(t).then(setRole);
+    });
   }, [tripId]);
 
   useEdgeSwipeBack(onBack);
 
   if (!trip) return <p className="p-6" style={{ color: "var(--text-body)" }}>Loading…</p>;
+
+  const canEdit = role === "owner" || role === "editor";
 
   const save = (field) => (value) => {
     setTrip((t) => ({ ...t, [field]: value }));
@@ -329,9 +551,35 @@ function TripHub({ tripId, onBack }) {
 
   return (
     <div className="min-h-screen px-4 pt-6" style={{ background: "var(--bg)", paddingBottom: 100 }}>
-      <button onClick={onBack} className="mb-4 text-sm underline" style={{ color: "var(--text-secondary)" }}>
-        ← My trips
-      </button>
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={onBack} className="text-sm underline" style={{ color: "var(--text-secondary)" }}>
+          ← My trips
+        </button>
+        {role === "owner" && (
+          <button
+            onClick={() => setShowShare(true)}
+            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full tg-btn"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+          >
+            <Users size={14} /> Share
+          </button>
+        )}
+        {role !== "owner" && (
+          <button
+            onClick={async () => {
+              if (!window.confirm("Leave this trip? You'll lose access until someone invites you again.")) return;
+              await leaveTrip(tripId);
+              onBack();
+            }}
+            className="text-sm font-medium px-3 py-1.5 rounded-full tg-btn"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}
+          >
+            {role === "viewer" ? "View only · Leave" : "Editor · Leave"}
+          </button>
+        )}
+      </div>
+
+      {showShare && <ShareModal tripId={tripId} destinationName={trip.destination_name} onClose={() => setShowShare(false)} />}
 
       <PlaceBanner
         placeName={photoQuery(trip)}
@@ -361,6 +609,7 @@ function TripHub({ tripId, onBack }) {
           trip={trip}
           onSave={save("itinerary")}
           onSetDates={setTripDates}
+          canEdit={canEdit}
           aiSlot={
             <AIGenerateCard
               trip={trip}
@@ -369,10 +618,10 @@ function TripHub({ tripId, onBack }) {
           }
         />
       )}
-      {tab === "budget" && <BudgetTab trip={trip} onSave={save("budget")} />}
+      {tab === "budget" && <BudgetTab trip={trip} onSave={save("budget")} canEdit={canEdit} />}
       {tab === "convert" && <ConverterTab homeCurrency={trip.home_currency || "USD"} />}
-      {tab === "map" && <TripMap trip={trip} onSave={save("map_pins")} />}
-      {tab === "pack" && <PackingTab trip={trip} onSave={save("packing")} />}
+      {tab === "map" && <TripMap trip={trip} onSave={save("map_pins")} canEdit={canEdit} />}
+      {tab === "pack" && <PackingTab trip={trip} onSave={save("packing")} canEdit={canEdit} />}
 
       <div className="tg-bottom-nav flex">
         {TRIP_TABS.map((t) => {
@@ -602,6 +851,7 @@ function ProfilePanel({ session, onBack }) {
 function Dashboard({ session }) {
   const [homeTab, setHomeTab] = useState("home");
   const [trips, setTrips] = useState([]);
+  const [myUserId, setMyUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [showNewTrip, setShowNewTrip] = useState(false);
@@ -619,6 +869,7 @@ function Dashboard({ session }) {
       .then(setTrips)
       .catch((err) => setLoadError(err.message || "Could not load your trips"))
       .finally(() => setLoading(false));
+    getCurrentUserId().then(setMyUserId);
   };
 
   useEffect(refresh, []);
@@ -660,6 +911,7 @@ function Dashboard({ session }) {
 
       {homeTab === "home" && (
         <div>
+          <PendingInvites onAccepted={(tripId) => setOpenTripId(tripId)} />
           <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>Your next adventure starts here.</p>
           <p className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>Where do you want to go next?</p>
           <div className="grid grid-cols-2 gap-3">
@@ -700,35 +952,47 @@ function Dashboard({ session }) {
             <p style={{ color: "var(--text-secondary)" }}>No trips yet — tap + below to plan your first one.</p>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {trips.map((t) => (
-                <div key={t.id} role="button" tabIndex={0} onClick={() => setOpenTripId(t.id)} className="text-left rounded-2xl overflow-hidden tg-card relative cursor-pointer">
-                  <PlaceBanner
-                    placeName={photoQuery(t)}
-                    savedUrl={t.photo_url}
-                    onResolved={(url) => updateTrip(t.id, { photo_url: url })}
-                    height={140}
-                  >
-                    <button
-                      type="button"
-                      aria-label={`Delete ${t.destination_name}`}
-                      onClick={(evt) => {
-                        evt.stopPropagation();
-                        setDeleteTarget(t);
-                      }}
-                      className="absolute top-2 right-2 p-1.5 rounded-full z-10"
-                      style={{ background: "rgba(0,0,0,0.45)", color: "white" }}
+              {trips.map((t) => {
+                const isOwner = !myUserId || t.user_id === myUserId;
+                return (
+                  <div key={t.id} role="button" tabIndex={0} onClick={() => setOpenTripId(t.id)} className="text-left rounded-2xl overflow-hidden tg-card relative cursor-pointer">
+                    <PlaceBanner
+                      placeName={photoQuery(t)}
+                      savedUrl={t.photo_url}
+                      onResolved={(url) => updateTrip(t.id, { photo_url: url })}
+                      height={140}
                     >
-                      <Trash2 size={14} />
-                    </button>
-                    <div className="absolute inset-0 flex flex-col justify-end p-3">
-                      <p className="font-semibold text-sm leading-tight" style={{ color: "white" }}>{t.destination_name}</p>
-                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
-                        {dateRangeLabel(t.start_date, t.end_date)}
-                      </p>
-                    </div>
-                  </PlaceBanner>
-                </div>
-              ))}
+                      {isOwner ? (
+                        <button
+                          type="button"
+                          aria-label={`Delete ${t.destination_name}`}
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            setDeleteTarget(t);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 rounded-full z-10"
+                          style={{ background: "rgba(0,0,0,0.45)", color: "white" }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      ) : (
+                        <span
+                          className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full z-10 text-[10px] font-semibold"
+                          style={{ background: "rgba(0,0,0,0.45)", color: "white" }}
+                        >
+                          <Users size={11} /> Shared
+                        </span>
+                      )}
+                      <div className="absolute inset-0 flex flex-col justify-end p-3">
+                        <p className="font-semibold text-sm leading-tight" style={{ color: "white" }}>{t.destination_name}</p>
+                        <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
+                          {dateRangeLabel(t.start_date, t.end_date)}
+                        </p>
+                      </div>
+                    </PlaceBanner>
+                  </div>
+                );
+              })}
             </div>
           )}
         </>

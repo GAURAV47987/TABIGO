@@ -14,7 +14,7 @@ function pinIcon(color) {
   });
 }
 
-export default function TripMap({ trip, onSave }) {
+export default function TripMap({ trip, onSave, canEdit = true }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const pins = trip.map_pins || [];
@@ -136,28 +136,32 @@ export default function TripMap({ trip, onSave }) {
         </div>
       )}
 
-      <button
-        onClick={() => setShowAdd(true)}
-        className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium mb-4 tg-btn"
-        style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
-      >
-        <Plus size={16} /> Add a place to the map
-      </button>
+      {canEdit && (
+        <button
+          onClick={() => setShowAdd(true)}
+          className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium mb-4 tg-btn"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+        >
+          <Plus size={16} /> Add a place to the map
+        </button>
+      )}
 
       {pins.length > 0 && (
         <div className="space-y-2">
           {pins.map((p) => (
             <div key={p.id} className="flex items-center justify-between rounded-lg px-3 py-2 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
               <span className="text-sm" style={{ color: "var(--text-body)" }}>{p.name}</span>
-              <span role="button" onClick={() => removePin(p.id)} style={{ color: "var(--stamp)" }}>
-                <Trash2 size={15} />
-              </span>
+              {canEdit && (
+                <span role="button" onClick={() => removePin(p.id)} style={{ color: "var(--stamp)" }}>
+                  <Trash2 size={15} />
+                </span>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {showAdd && (
+      {canEdit && showAdd && (
         <div className="fixed inset-0 flex items-center justify-center px-4 z-50" style={{ background: "rgba(0,0,0,0.4)" }}>
           <form onSubmit={addPin} className="w-full max-w-sm p-6 rounded-2xl tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
             <h2 className="text-lg font-bold mb-4" style={{ color: "var(--text-primary)" }}>Add a place</h2>

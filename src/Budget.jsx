@@ -6,7 +6,7 @@ import { CATEGORIES, CATEGORY_COLOR_VAR, CURRENCIES, CURRENCY_SYMBOL, FX_STORAGE
 import { loadFromStorage } from "./storage";
 import { Section } from "./ui";
 
-export default function BudgetTab({ trip, onSave }) {
+export default function BudgetTab({ trip, onSave, canEdit = true }) {
   const budget = trip.budget || [];
   const homeCurrency = trip.home_currency || "USD";
   const [showForm, setShowForm] = useState(false);
@@ -124,17 +124,19 @@ export default function BudgetTab({ trip, onSave }) {
 
   return (
     <div>
-      <button
-        onClick={() => {
-          setForm({ description: "", amount: "", currency: homeCurrency, category: "Activities" });
-          setEditingId(null);
-          setShowForm(true);
-        }}
-        className="w-full flex items-center justify-center gap-2 rounded-xl py-4 text-base font-bold mb-5 tg-btn tg-btn-stamp"
-        style={{ color: "white" }}
-      >
-        <Plus size={20} strokeWidth={3} /> ADD EXPENSE
-      </button>
+      {canEdit && (
+        <button
+          onClick={() => {
+            setForm({ description: "", amount: "", currency: homeCurrency, category: "Activities" });
+            setEditingId(null);
+            setShowForm(true);
+          }}
+          className="w-full flex items-center justify-center gap-2 rounded-xl py-4 text-base font-bold mb-5 tg-btn tg-btn-stamp"
+          style={{ color: "white" }}
+        >
+          <Plus size={20} strokeWidth={3} /> ADD EXPENSE
+        </button>
+      )}
 
       {Object.keys(totals).length > 0 && (
         <div className="rounded-2xl p-4 mb-2.5 tg-card" style={{ background: "var(--stamp)", color: "white" }}>
@@ -214,7 +216,8 @@ export default function BudgetTab({ trip, onSave }) {
         {visibleExpenses.map((e) => (
           <button
             key={e.id}
-            onClick={() => openEdit(e)}
+            onClick={() => canEdit && openEdit(e)}
+            disabled={!canEdit}
             className="w-full text-left rounded-xl px-3 py-2.5 flex items-center justify-between tg-card"
             style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
           >
@@ -224,23 +227,25 @@ export default function BudgetTab({ trip, onSave }) {
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-sm font-medium">{CURRENCY_SYMBOL[e.currency]}{parseFloat(e.amount).toLocaleString()}</span>
-              <span
-                role="button"
-                aria-label={`Delete ${e.description}`}
-                onClick={(evt) => {
-                  evt.stopPropagation();
-                  removeExpense(e.id);
-                }}
-                style={{ color: "var(--stamp)" }}
-              >
-                <Trash2 size={15} />
-              </span>
+              {canEdit && (
+                <span
+                  role="button"
+                  aria-label={`Delete ${e.description}`}
+                  onClick={(evt) => {
+                    evt.stopPropagation();
+                    removeExpense(e.id);
+                  }}
+                  style={{ color: "var(--stamp)" }}
+                >
+                  <Trash2 size={15} />
+                </span>
+              )}
             </div>
           </button>
         ))}
       </div>
 
-      {showForm && (
+      {canEdit && showForm && (
         <div className="fixed inset-0 flex items-center justify-center px-4 z-50" style={{ background: "rgba(0,0,0,0.4)" }} onClick={closeForm}>
           <div
             className="w-full max-w-sm rounded-2xl p-5 space-y-3 tg-card"

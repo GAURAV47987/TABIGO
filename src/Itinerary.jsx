@@ -16,7 +16,7 @@ function formatDay(dateStr, dayNumber) {
   return `Day ${dayNumber} · ${weekday}, ${monthDay}`;
 }
 
-function ItemModal({ date, initial, onSave, onDelete, onClose }) {
+function ItemModal({ date, initial, onSave, onDelete, onClose, readOnly }) {
   const [time, setTime] = useState(initial?.time || "");
   const [title, setTitle] = useState(initial?.title || "");
   const [notes, setNotes] = useState(initial?.notes || "");
@@ -73,6 +73,7 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
+          disabled={readOnly}
           className="w-full mb-3 px-3 py-2 rounded-lg"
           style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
         />
@@ -84,6 +85,7 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
           placeholder="e.g. Uluwatu temple sunset"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          disabled={readOnly}
           className="w-full mb-3 px-3 py-2 rounded-lg"
           style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
         />
@@ -93,6 +95,7 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
+          disabled={readOnly}
           className="w-full mb-3 px-3 py-2 rounded-lg"
           style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
         />
@@ -102,6 +105,7 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
           placeholder="e.g. Uluwatu Temple, Bali"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
+          disabled={readOnly}
           className="w-full mb-1 px-3 py-2 rounded-lg"
           style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
         />
@@ -116,19 +120,21 @@ function ItemModal({ date, initial, onSave, onDelete, onClose }) {
             className="flex-1 py-2.5 rounded-lg font-semibold tg-btn"
             style={{ border: "1px solid var(--border)", color: "var(--text-body)", background: "var(--surface)" }}
           >
-            Cancel
+            {readOnly ? "Close" : "Cancel"}
           </button>
-          <button
-            type="submit"
-            disabled={geocoding}
-            className="flex-1 py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
-            style={{ color: "var(--primary-text)" }}
-          >
-            {geocoding ? "Finding place…" : "Save"}
-          </button>
+          {!readOnly && (
+            <button
+              type="submit"
+              disabled={geocoding}
+              className="flex-1 py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
+              style={{ color: "var(--primary-text)" }}
+            >
+              {geocoding ? "Finding place…" : "Save"}
+            </button>
+          )}
         </div>
 
-        {initial && (
+        {initial && !readOnly && (
           <button
             type="button"
             onClick={() => onDelete(initial.id)}
@@ -185,7 +191,7 @@ function SetDatesPrompt({ onSet }) {
   );
 }
 
-function DayCard({ date, dayNumber, stopName, items, onAdd, onEdit }) {
+function DayCard({ date, dayNumber, stopName, items, onAdd, onEdit, canEdit }) {
   const sorted = [...items].sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
 
   return (
@@ -195,9 +201,11 @@ function DayCard({ date, dayNumber, stopName, items, onAdd, onEdit }) {
           <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{formatDay(date, dayNumber)}</p>
           {stopName && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{stopName}</p>}
         </div>
-        <button onClick={() => onAdd(date)} className="text-sm underline" style={{ color: "var(--text-secondary)" }}>
-          + Add
-        </button>
+        {canEdit && (
+          <button onClick={() => onAdd(date)} className="text-sm underline" style={{ color: "var(--text-secondary)" }}>
+            + Add
+          </button>
+        )}
       </div>
 
       {sorted.length === 0 ? (
@@ -226,7 +234,7 @@ function DayCard({ date, dayNumber, stopName, items, onAdd, onEdit }) {
   );
 }
 
-export default function ItineraryTab({ trip, onSave, onSetDates, aiSlot }) {
+export default function ItineraryTab({ trip, onSave, onSetDates, aiSlot, canEdit = true }) {
   const [modalDate, setModalDate] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
 
@@ -262,7 +270,7 @@ export default function ItineraryTab({ trip, onSave, onSetDates, aiSlot }) {
 
   return (
     <div>
-      {aiSlot}
+      {canEdit && aiSlot}
 
       {days.map((date, i) => (
         <DayCard
@@ -276,6 +284,7 @@ export default function ItineraryTab({ trip, onSave, onSetDates, aiSlot }) {
             setModalDate(item.date);
             setEditingItem(item);
           }}
+          canEdit={canEdit}
         />
       ))}
 
@@ -286,6 +295,7 @@ export default function ItineraryTab({ trip, onSave, onSetDates, aiSlot }) {
           onSave={handleSave}
           onDelete={handleDelete}
           onClose={closeModal}
+          readOnly={!canEdit}
         />
       )}
     </div>

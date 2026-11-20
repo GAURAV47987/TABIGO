@@ -65,6 +65,13 @@ export async function uploadAvatar(file) {
   return getAvatarUrl(user.id);
 }
 
+export async function getCurrentUserId() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
 export async function getSession() {
   const {
     data: { session },
@@ -111,10 +118,75 @@ export async function createTrip({ destinationName, lat, lng, startDate, endDate
 export async function listTrips() {
   const { data, error } = await supabase
     .from("trips")
-    .select("id, destination_name, destination_lat, destination_lng, start_date, end_date, stops, photo_url, created_at")
+    .select("id, user_id, destination_name, destination_lat, destination_lng, start_date, end_date, stops, photo_url, created_at")
     .order("start_date", { ascending: true, nullsFirst: false });
   if (error) throw error;
   return data;
+}
+
+// ---- Sharing / collaboration -------------------------------------------
+// See supabase/add_trip_collaborators.sql — every write here goes through
+// a security-definer RPC, never a direct table write, so a client can
+// only ever read a collaborator row, not tamper with it (e.g. an invitee
+// bumping their own role while accepting).
+
+// Whichever of owner/editor/viewer is most permissive for this trip and
+// session — "viewer" if an accepted collaborator row exists but isn't
+// resolved yet, since that's the safe default while loading.
+export async function getMyTripRole(trip) {
+  const userId = await getCurrentUserId();
+  if (!userId) return "viewer";
+  if (trip.user_id === userId) return "owner";
+  const { data } = await supabase
+    .from("trip_collaborators")
+    .select("role")
+    .eq("trip_id", trip.id)
+    .eq("user_id", userId)
+    .eq("status", "accepted")
+    .maybeSingle();
+  return data?.role === "editor" ? "editor" : "viewer";
+}
+
+export async function inviteTripCollaborator(tripId, email, role) {
+  const { error } = await supabase.rpc("invite_trip_collaborator", { p_trip_id: tripId, p_email: email, p_role: role });
+  if (error) throw error;
+}
+
+export async function updateCollaboratorRole(collaboratorId, role) {
+  const { error } = await supabase.rpc("update_trip_collaborator_role", { p_collaborator_id: collaboratorId, p_role: role });
+  if (error) throw error;
+}
+
+export async function removeCollaborator(collaboratorId) {
+  const { error } = await supabase.rpc("remove_trip_collaborator", { p_collaborator_id: collaboratorId });
+  if (error) throw error;
+}
+
+export async function listTripCollaborators(tripId) {
+  const { data, error } = await supabase.rpc("list_trip_collaborators", { p_trip_id: tripId });
+  if (error) throw error;
+  return data;
+}
+
+export async function listMyPendingInvites() {
+  const { data, error } = await supabase.rpc("list_my_pending_invites");
+  if (error) throw error;
+  return data;
+}
+
+export async function acceptTripInvite(tripId) {
+  const { error } = await supabase.rpc("accept_trip_invite", { p_trip_id: tripId });
+  if (error) throw error;
+}
+
+export async function declineTripInvite(tripId) {
+  const { error } = await supabase.rpc("decline_trip_invite", { p_trip_id: tripId });
+  if (error) throw error;
+}
+
+export async function leaveTrip(tripId) {
+  const { error } = await supabase.rpc("leave_trip", { p_trip_id: tripId });
+  if (error) throw error;
 }
 
 // A shared, app-wide photo cache (see supabase/add_place_photos_cache.sql):
