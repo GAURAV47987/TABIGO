@@ -9,7 +9,7 @@ import { CURRENCIES } from "./constants";
 import { PlaceBanner } from "./PlacePhoto";
 import { useEdgeSwipeBack } from "./useEdgeSwipeBack";
 
-const STEPS = ["Destination", "Route", "Dates", "Add-ons"];
+const STEPS = ["Destination", "Dates", "Route", "Add-ons"];
 
 function PlaceAutocomplete({ value, onChange, onPick, placeholder, autoFocus }) {
   const [suggestions, setSuggestions] = useState([]);
@@ -162,6 +162,7 @@ export default function NewTripWizard({ onClose, onCreated }) {
   const [newStopName, setNewStopName] = useState("");
   const [tripName, setTripName] = useState("");
   const [startDate, setStartDate] = useState("");
+  const [totalDays, setTotalDays] = useState(7);
   const [homeCurrency, setHomeCurrency] = useState("USD");
   const [climate, setClimate] = useState(null);
   const [suggestions, setSuggestions] = useState(null);
@@ -211,7 +212,7 @@ export default function NewTripWizard({ onClose, onCreated }) {
 
   // Climate preview once a start date and at least one stop exist.
   useEffect(() => {
-    if (step !== 3 || !startDate || !stops[0]) {
+    if (step !== 2 || !startDate || !stops[0]) {
       setClimate(null);
       return;
     }
@@ -287,6 +288,24 @@ export default function NewTripWizard({ onClose, onCreated }) {
       ? `Expect around ${Math.round(climate.avgHigh)}°C${climate.rainyDays > 0 ? ", some rain" : ", mostly dry"}.`
       : null;
 
+  const daysPlanned = stops.reduce((sum, s) => sum + s.days, 0);
+  const daysPlannedNote =
+    daysPlanned === totalDays
+      ? `${daysPlanned} of ${totalDays} days planned — nice, that's all of it.`
+      : daysPlanned < totalDays
+      ? `${daysPlanned} of ${totalDays} days planned — ${totalDays - daysPlanned} day${totalDays - daysPlanned === 1 ? "" : "s"} left to assign.`
+      : `${daysPlanned} of ${totalDays} days planned — ${daysPlanned - totalDays} day${daysPlanned - totalDays === 1 ? "" : "s"} over; that's fine, your trip will just run a bit longer.`;
+
+  // Moving from Dates to Route: only the single default stop exists so far
+  // (nothing split out yet), so hand it the full day count the user just
+  // chose — it's then theirs to redistribute as they add stops. Once
+  // they've already split days across more than one stop, this leaves
+  // that allocation alone rather than clobbering it on Back/Next.
+  const continueToRoute = () => {
+    if (stops.length === 1) setStops([{ ...stops[0], days: totalDays }]);
+    setStep(3);
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: "var(--bg)" }}>
       <div className="w-full mx-auto px-4 pt-6" style={{ maxWidth: "var(--app-max-width)", paddingBottom: 100 }}>
@@ -319,36 +338,6 @@ export default function NewTripWizard({ onClose, onCreated }) {
 
           {step === 2 && (
             <div>
-              <h2 className="text-lg font-bold mb-3" style={{ color: "var(--text-primary)" }}>Your route</h2>
-
-              <PlaceBanner placeName={stops[0]?.name} height={150} className="rounded-xl mb-4 tg-card">
-                <StampBadge label={stops[0]?.name} />
-              </PlaceBanner>
-
-              <JourneyStrip stops={stops} onChangeDays={changeDays} onRemove={removeStop} />
-
-              {addingStop ? (
-                <div className="flex gap-2 items-center mt-2">
-                  <PlaceAutocomplete autoFocus placeholder="e.g. Paris" value={newStopName} onChange={setNewStopName} onPick={addStop} />
-                  <button type="button" onClick={() => setAddingStop(false)} style={{ color: "var(--text-tertiary)" }}>
-                    <X size={18} />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setAddingStop(true)}
-                  className="flex items-center gap-1 text-sm mt-2"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  <Plus size={14} /> Add another stop
-                </button>
-              )}
-            </div>
-          )}
-
-          {step === 3 && (
-            <div>
               <h2 className="text-lg font-bold mb-3" style={{ color: "var(--text-primary)" }}>When are you going?</h2>
 
               <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Trip name (optional)</label>
@@ -377,6 +366,32 @@ export default function NewTripWizard({ onClose, onCreated }) {
                 </p>
               )}
 
+              <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>How many days is this trip?</label>
+              <div className="flex items-center gap-3 mb-1">
+                <button
+                  type="button"
+                  onClick={() => setTotalDays((d) => Math.max(1, d - 1))}
+                  className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
+                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                >
+                  −
+                </button>
+                <span className="text-base font-semibold" style={{ color: "var(--text-primary)", minWidth: 64 }}>
+                  {totalDays} day{totalDays === 1 ? "" : "s"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setTotalDays((d) => d + 1)}
+                  className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
+                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                >
+                  +
+                </button>
+              </div>
+              <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+                Next, you'll split these days across every place you're visiting.
+              </p>
+
               <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Home currency (for budget totals)</label>
               <select
                 value={homeCurrency}
@@ -386,6 +401,37 @@ export default function NewTripWizard({ onClose, onCreated }) {
               >
                 {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <h2 className="text-lg font-bold mb-3" style={{ color: "var(--text-primary)" }}>Your route</h2>
+
+              <PlaceBanner placeName={stops[0]?.name} height={150} className="rounded-xl mb-4 tg-card">
+                <StampBadge label={stops[0]?.name} />
+              </PlaceBanner>
+              <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>{daysPlannedNote}</p>
+
+              <JourneyStrip stops={stops} onChangeDays={changeDays} onRemove={removeStop} />
+
+              {addingStop ? (
+                <div className="flex gap-2 items-center mt-2">
+                  <PlaceAutocomplete autoFocus placeholder="e.g. Paris" value={newStopName} onChange={setNewStopName} onPick={addStop} />
+                  <button type="button" onClick={() => setAddingStop(false)} style={{ color: "var(--text-tertiary)" }}>
+                    <X size={18} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAddingStop(true)}
+                  className="flex items-center gap-1 text-sm mt-2"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  <Plus size={14} /> Add another stop
+                </button>
+              )}
             </div>
           )}
 
@@ -481,8 +527,7 @@ export default function NewTripWizard({ onClose, onCreated }) {
           {step === 2 && (
             <button
               type="button"
-              onClick={() => setStep(3)}
-              disabled={stops.length === 0}
+              onClick={continueToRoute}
               className="flex-1 py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
               style={{ color: "var(--primary-text)" }}
             >
@@ -493,6 +538,7 @@ export default function NewTripWizard({ onClose, onCreated }) {
             <button
               type="button"
               onClick={() => setStep(4)}
+              disabled={stops.length === 0}
               className="flex-1 py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
               style={{ color: "var(--primary-text)" }}
             >
