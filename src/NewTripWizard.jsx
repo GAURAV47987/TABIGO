@@ -9,7 +9,7 @@ import { CURRENCIES } from "./constants";
 import { PlaceBanner } from "./PlacePhoto";
 import { useEdgeSwipeBack } from "./useEdgeSwipeBack";
 
-const STEPS = ["Destination", "Dates", "Route", "Add-ons"];
+const STEPS = ["Destination", "Route", "Add-ons"];
 
 function PlaceAutocomplete({ value, onChange, onPick, placeholder, autoFocus }) {
   const [suggestions, setSuggestions] = useState([]);
@@ -183,10 +183,12 @@ export default function NewTripWizard({ onClose, onCreated }) {
   };
   const removeStop = (i) => setStops((prev) => prev.filter((_, idx) => idx !== i));
 
+  // Picking a place no longer advances the step — destination, dates and
+  // currency all live on step 1 together now, so this just reveals the
+  // rest of that page's fields in place.
   const pickFirstPlace = (place) => {
     setError("");
     setStops([{ name: place.name, lat: place.lat, lng: place.lng, days: 3 }]);
-    setStep(2);
   };
 
   const continueStep1 = async () => {
@@ -196,7 +198,6 @@ export default function NewTripWizard({ onClose, onCreated }) {
     try {
       const place = await geocodeDestination(pendingName.trim());
       setStops([{ name: pendingName.trim(), lat: place.lat, lng: place.lng, days: 3 }]);
-      setStep(2);
     } catch (err) {
       setError(err.message || "Could not find that place");
     } finally {
@@ -212,7 +213,7 @@ export default function NewTripWizard({ onClose, onCreated }) {
 
   // Climate preview once a start date and at least one stop exist.
   useEffect(() => {
-    if (step !== 2 || !startDate || !stops[0]) {
+    if (step !== 1 || !startDate || !stops[0]) {
       setClimate(null);
       return;
     }
@@ -227,9 +228,9 @@ export default function NewTripWizard({ onClose, onCreated }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, startDate]);
 
-  // AI-curated add-on suggestions, fetched once when reaching step 4.
+  // AI-curated add-on suggestions, fetched once when reaching the Add-ons step.
   useEffect(() => {
-    if (step !== 4 || suggestions !== null || !stops[0]) return;
+    if (step !== 3 || suggestions !== null || !stops[0]) return;
     setSuggestLoading(true);
     setSuggestError("");
     suggestPopularPlaces(stops[0].name)
@@ -296,14 +297,14 @@ export default function NewTripWizard({ onClose, onCreated }) {
       ? `${daysPlanned} of ${totalDays} days planned — ${totalDays - daysPlanned} day${totalDays - daysPlanned === 1 ? "" : "s"} left to assign.`
       : `${daysPlanned} of ${totalDays} days planned — ${daysPlanned - totalDays} day${daysPlanned - totalDays === 1 ? "" : "s"} over; that's fine, your trip will just run a bit longer.`;
 
-  // Moving from Dates to Route: only the single default stop exists so far
+  // Moving from step 1 to Route: only the single default stop exists so far
   // (nothing split out yet), so hand it the full day count the user just
   // chose — it's then theirs to redistribute as they add stops. Once
   // they've already split days across more than one stop, this leaves
   // that allocation alone rather than clobbering it on Back/Next.
   const continueToRoute = () => {
     if (stops.length === 1) setStops([{ ...stops[0], days: totalDays }]);
-    setStep(3);
+    setStep(2);
   };
 
   return (
@@ -331,80 +332,93 @@ export default function NewTripWizard({ onClose, onCreated }) {
               <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
                 Type a city, or a whole country to see its biggest cities.
               </p>
-              <PlaceAutocomplete autoFocus placeholder="e.g. Bali, or Japan" value={pendingName} onChange={setPendingName} onPick={pickFirstPlace} />
+
+              {stops[0] ? (
+                <div
+                  className="flex items-center justify-between px-3 py-2 rounded-lg"
+                  style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+                >
+                  <p className="text-sm" style={{ color: "var(--text-body)" }}>
+                    Going to <span className="font-bold">{stops[0].name}</span>
+                  </p>
+                  <button type="button" onClick={() => setStops([])} className="text-xs underline" style={{ color: "var(--stamp)" }}>
+                    Change
+                  </button>
+                </div>
+              ) : (
+                <PlaceAutocomplete autoFocus placeholder="e.g. Bali, or Japan" value={pendingName} onChange={setPendingName} onPick={pickFirstPlace} />
+              )}
               {error && <p className="text-sm mt-3" style={{ color: "var(--stamp)" }}>{error}</p>}
+
+              {stops[0] && (
+                <div className="mt-4">
+                  <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Trip name (optional)</label>
+                  <input
+                    placeholder={stops.map((s) => s.name).join(" → ")}
+                    value={tripName}
+                    onChange={(e) => setTripName(e.target.value)}
+                    className="w-full mb-3 px-3 py-2 rounded-lg"
+                    style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+                  />
+
+                  <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Start date (optional)</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full mb-1 px-3 py-2 rounded-lg"
+                    style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+                  />
+                  {climateNote && (
+                    <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>☀ {climateNote}</p>
+                  )}
+                  {!climateNote && (
+                    <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+                      Not sure yet? Skip this — you can add dates later from the trip's Itinerary tab.
+                    </p>
+                  )}
+
+                  <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>How many days is this trip?</label>
+                  <div className="flex items-center gap-3 mb-1">
+                    <button
+                      type="button"
+                      onClick={() => setTotalDays((d) => Math.max(1, d - 1))}
+                      className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
+                      style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                    >
+                      −
+                    </button>
+                    <span className="text-base font-semibold" style={{ color: "var(--text-primary)", minWidth: 64 }}>
+                      {totalDays} day{totalDays === 1 ? "" : "s"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setTotalDays((d) => d + 1)}
+                      className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
+                      style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+                    Next, you'll split these days across every place you're visiting.
+                  </p>
+
+                  <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Home currency (for budget totals)</label>
+                  <select
+                    value={homeCurrency}
+                    onChange={(e) => setHomeCurrency(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg"
+                    style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
+                  >
+                    {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
           )}
 
           {step === 2 && (
-            <div>
-              <h2 className="text-lg font-bold mb-3" style={{ color: "var(--text-primary)" }}>When are you going?</h2>
-
-              <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Trip name (optional)</label>
-              <input
-                placeholder={stops.map((s) => s.name).join(" → ")}
-                value={tripName}
-                onChange={(e) => setTripName(e.target.value)}
-                className="w-full mb-3 px-3 py-2 rounded-lg"
-                style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
-              />
-
-              <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Start date (optional)</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full mb-1 px-3 py-2 rounded-lg"
-                style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
-              />
-              {climateNote && (
-                <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>☀ {climateNote}</p>
-              )}
-              {!climateNote && (
-                <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
-                  Not sure yet? Skip this — you can add dates later from the trip's Itinerary tab.
-                </p>
-              )}
-
-              <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>How many days is this trip?</label>
-              <div className="flex items-center gap-3 mb-1">
-                <button
-                  type="button"
-                  onClick={() => setTotalDays((d) => Math.max(1, d - 1))}
-                  className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
-                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
-                >
-                  −
-                </button>
-                <span className="text-base font-semibold" style={{ color: "var(--text-primary)", minWidth: 64 }}>
-                  {totalDays} day{totalDays === 1 ? "" : "s"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setTotalDays((d) => d + 1)}
-                  className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
-                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
-                >
-                  +
-                </button>
-              </div>
-              <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
-                Next, you'll split these days across every place you're visiting.
-              </p>
-
-              <label className="block text-sm mb-1" style={{ color: "var(--text-tertiary)" }}>Home currency (for budget totals)</label>
-              <select
-                value={homeCurrency}
-                onChange={(e) => setHomeCurrency(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg"
-                style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-body)" }}
-              >
-                {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          )}
-
-          {step === 3 && (
             <div>
               <h2 className="text-lg font-bold mb-3" style={{ color: "var(--text-primary)" }}>Your route</h2>
 
@@ -435,7 +449,7 @@ export default function NewTripWizard({ onClose, onCreated }) {
             </div>
           )}
 
-          {step === 4 && (
+          {step === 3 && (
             <div>
               <h2 className="text-lg font-bold mb-1" style={{ color: "var(--text-primary)" }}>Popular add-ons</h2>
               <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
@@ -513,7 +527,7 @@ export default function NewTripWizard({ onClose, onCreated }) {
               Back
             </button>
           )}
-          {step === 1 && (
+          {step === 1 && !stops[0] && (
             <button
               type="button"
               onClick={continueStep1}
@@ -524,7 +538,7 @@ export default function NewTripWizard({ onClose, onCreated }) {
               {busy ? "Finding…" : "Continue"}
             </button>
           )}
-          {step === 2 && (
+          {step === 1 && stops[0] && (
             <button
               type="button"
               onClick={continueToRoute}
@@ -534,10 +548,10 @@ export default function NewTripWizard({ onClose, onCreated }) {
               Next
             </button>
           )}
-          {step === 3 && (
+          {step === 2 && (
             <button
               type="button"
-              onClick={() => setStep(4)}
+              onClick={() => setStep(3)}
               disabled={stops.length === 0}
               className="flex-1 py-2.5 rounded-lg font-semibold tg-btn tg-btn-primary"
               style={{ color: "var(--primary-text)" }}
@@ -545,7 +559,7 @@ export default function NewTripWizard({ onClose, onCreated }) {
               Next
             </button>
           )}
-          {step === 4 && (
+          {step === 3 && (
             <button
               type="button"
               onClick={finalize}
