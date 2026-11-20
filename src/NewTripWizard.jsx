@@ -6,7 +6,6 @@ import { searchPlaces } from "./geonames";
 import { buildDatedStops } from "./stops";
 import { getTripClimate } from "./weather";
 import { CURRENCIES } from "./constants";
-import { PlaceBanner } from "./PlacePhoto";
 import { useEdgeSwipeBack } from "./useEdgeSwipeBack";
 
 const STEPS = ["Destination", "Route", "Add-ons"];
@@ -81,33 +80,6 @@ function PlaceAutocomplete({ value, onChange, onPick, placeholder, autoFocus }) 
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function StampBadge({ label }) {
-  return (
-    <div
-      className="absolute flex items-center justify-center text-center"
-      style={{
-        top: 12,
-        right: 12,
-        width: 74,
-        height: 74,
-        borderRadius: "50%",
-        border: "3px dashed var(--stamp)",
-        color: "var(--stamp)",
-        background: "rgba(255,255,255,0.88)",
-        transform: "rotate(-12deg)",
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: 0.3,
-        textTransform: "uppercase",
-        lineHeight: 1.15,
-        padding: 6,
-      }}
-    >
-      {label}
     </div>
   );
 }
@@ -290,12 +262,6 @@ export default function NewTripWizard({ onClose, onCreated }) {
       : null;
 
   const daysPlanned = stops.reduce((sum, s) => sum + s.days, 0);
-  const daysPlannedNote =
-    daysPlanned === totalDays
-      ? `${daysPlanned} of ${totalDays} days planned — nice, that's all of it.`
-      : daysPlanned < totalDays
-      ? `${daysPlanned} of ${totalDays} days planned — ${totalDays - daysPlanned} day${totalDays - daysPlanned === 1 ? "" : "s"} left to assign.`
-      : `${daysPlanned} of ${totalDays} days planned — ${daysPlanned - totalDays} day${daysPlanned - totalDays === 1 ? "" : "s"} over; that's fine, your trip will just run a bit longer.`;
 
   // Moving from step 1 to Route: only the single default stop exists so far
   // (nothing split out yet), so hand it the full day count the user just
@@ -420,30 +386,121 @@ export default function NewTripWizard({ onClose, onCreated }) {
 
           {step === 2 && (
             <div>
-              <h2 className="text-lg font-bold mb-3" style={{ color: "var(--text-primary)" }}>Your route</h2>
+              <h2 className="text-lg font-bold mb-1" style={{ color: "var(--text-primary)" }}>Which cities will you visit?</h2>
+              <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
+                {stops.length > 1
+                  ? `Nice — here's how your ${totalDays} day${totalDays === 1 ? "" : "s"} break down.`
+                  : `Split your ${totalDays} day${totalDays === 1 ? "" : "s"} across every stop — add as many cities as you like.`}
+              </p>
 
-              <PlaceBanner placeName={stops[0]?.name} height={150} className="rounded-xl mb-4 tg-card">
-                <StampBadge label={stops[0]?.name} />
-              </PlaceBanner>
-              <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>{daysPlannedNote}</p>
+              {stops.length === 1 && (
+                <div
+                  className="flex gap-3 items-start mb-4 p-4 rounded-2xl"
+                  style={{ border: "1.5px dashed var(--stamp)", background: "color-mix(in srgb, var(--stamp) 6%, var(--surface))" }}
+                >
+                  <div
+                    className="flex items-center justify-center shrink-0 font-bold"
+                    style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--stamp)", color: "#fff" }}
+                  >
+                    +
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold mb-0.5" style={{ color: "var(--text-primary)" }}>Start by adding a city</p>
+                    <p className="text-xs" style={{ color: "var(--text-secondary)" }}>e.g. Sydney, Melbourne, Perth — tap the button below to search.</p>
+                  </div>
+                </div>
+              )}
 
-              <JourneyStrip stops={stops} onChangeDays={changeDays} onRemove={removeStop} />
+              <div className="rounded-2xl p-3.5 mb-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="flex justify-between items-baseline mb-2">
+                  <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Days planned</span>
+                  <span className="text-sm" style={{ color: daysPlanned > totalDays ? "var(--stamp)" : "var(--text-muted)" }}>
+                    {daysPlanned} of {totalDays}{daysPlanned === totalDays ? " — all set" : ""}
+                  </span>
+                </div>
+                <div className="rounded-full overflow-hidden" style={{ height: 8, background: "var(--border)" }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.min(100, (daysPlanned / totalDays) * 100)}%`,
+                      background: daysPlanned > totalDays ? "var(--stamp)" : "var(--primary-bg)",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2.5">
+                {stops.map((s, i) => (
+                  <div
+                    key={`${s.name}-${i}`}
+                    className="flex items-center justify-between rounded-2xl p-3.5"
+                    style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="rounded-full shrink-0" style={{ width: 10, height: 10, background: "var(--stamp)" }} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>{s.name}</p>
+                        {stops.length > 1 ? (
+                          <button
+                            type="button"
+                            onClick={() => removeStop(i)}
+                            className="text-xs underline mt-0.5"
+                            style={{ color: "var(--stamp)" }}
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Whole country — add cities to break this down</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => changeDays(i, -1)}
+                        className="rounded-full text-sm flex items-center justify-center"
+                        style={{ width: 26, height: 26, background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                      >
+                        −
+                      </button>
+                      <span className="text-sm" style={{ color: "var(--text-tertiary)", minWidth: 18, textAlign: "center" }}>{s.days}d</span>
+                      <button
+                        type="button"
+                        onClick={() => changeDays(i, 1)}
+                        className="rounded-full text-sm flex items-center justify-center"
+                        style={{ width: 26, height: 26, background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
               {addingStop ? (
-                <div className="flex gap-2 items-center mt-2">
+                <div className="flex gap-2 items-center mt-3">
                   <PlaceAutocomplete autoFocus placeholder="e.g. Paris" value={newStopName} onChange={setNewStopName} onPick={addStop} />
                   <button type="button" onClick={() => setAddingStop(false)} style={{ color: "var(--text-tertiary)" }}>
                     <X size={18} />
                   </button>
                 </div>
+              ) : stops.length === 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setAddingStop(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 mt-3 rounded-2xl font-bold text-sm"
+                  style={{ border: "2px solid var(--primary-bg)", background: "color-mix(in srgb, var(--primary-bg) 8%, var(--surface))", color: "var(--primary-bg)" }}
+                >
+                  <Plus size={18} /> Add a city
+                </button>
               ) : (
                 <button
                   type="button"
                   onClick={() => setAddingStop(true)}
-                  className="flex items-center gap-1 text-sm mt-2"
-                  style={{ color: "var(--text-secondary)" }}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 mt-3 rounded-2xl font-semibold text-sm"
+                  style={{ border: "1.5px dashed var(--text-faint)", background: "var(--surface)", color: "var(--text-tertiary)" }}
                 >
-                  <Plus size={14} /> Add another stop
+                  <Plus size={16} /> Add another city
                 </button>
               )}
             </div>
