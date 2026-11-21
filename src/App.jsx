@@ -28,6 +28,7 @@ import {
 } from "./supabase";
 import { Plus, Trash2, User, Calendar, Wallet, ArrowLeftRight, Map as MapIcon, Luggage, Compass, Users, Mail, UserPlus } from "lucide-react";
 import { enumerateDates } from "./dates";
+import { useThemeMode } from "./theme";
 import { buildDatedStops, getEffectiveStops } from "./stops";
 import { isAdmin } from "./admin";
 import NewTripWizard from "./NewTripWizard";
@@ -685,7 +686,14 @@ function AdminPanel({ onBack }) {
   );
 }
 
+const THEME_MODES = [
+  { value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
+
 function ProfilePanel({ session, onBack }) {
+  const { mode, setMode } = useThemeMode();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -801,6 +809,27 @@ function ProfilePanel({ session, onBack }) {
       <div className="p-4 rounded-2xl mb-4 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>Plan</p>
         <p className="font-medium" style={{ color: "var(--text-primary)" }}>Free</p>
+      </div>
+
+      <div className="p-4 rounded-2xl mb-4 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <p className="font-semibold mb-3" style={{ color: "var(--text-primary)" }}>Appearance</p>
+        <div className="flex gap-2">
+          {THEME_MODES.map((m) => (
+            <button
+              key={m.value}
+              type="button"
+              onClick={() => setMode(m.value)}
+              className="flex-1 py-2.5 rounded-lg font-semibold text-sm tg-btn"
+              style={{
+                border: `1px solid ${mode === m.value ? "var(--primary-bg)" : "var(--border)"}`,
+                background: mode === m.value ? "var(--primary-bg)" : "var(--bg)",
+                color: mode === m.value ? "var(--primary-text)" : "var(--text-body)",
+              }}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <form onSubmit={submitPassword} className="p-4 rounded-2xl mb-4 tg-card" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>

@@ -9,24 +9,24 @@ input, select, textarea {
 
 :root {
   color-scheme: light;
-  /* Postcard Pop — same stamp/tape/passport motifs as before, recolored
-     bright and playful instead of muted kraft paper: violet primary,
-     coral stamp, buttery-yellow tape, on a clean near-white surface. */
-  --bg: #FBF8FF;
+  /* Mandarin Grove — mandarin orange, forest green and crest yellow on a
+     warm cream base. Replaces the old violet/coral Postcard Pop palette.
+     Keep this in sync with the mobile app's src/theme.tsx if it changes. */
+  --bg: #FFF8E8;
   --surface: #FFFFFF;
-  --border: #EDE7FA;
-  --text-primary: #241E3D;
-  --text-body: #3A3159;
-  --text-tertiary: #5B5380;
-  --text-secondary: #7A72A3;
-  --text-muted: #8680AC;
-  --text-faint: #C3BEDE;
-  --icon-empty: #D8D3EE;
-  --scrollbar-thumb: #D8D3EE;
-  --primary-bg: #7C5CFC;
+  --border: #FFE8B8;
+  --text-primary: #1F3D2B;
+  --text-body: #2B4A36;
+  --text-tertiary: #3F5F49;
+  --text-secondary: #6B8F77;
+  --text-muted: #8AA68F;
+  --text-faint: #C7D9C9;
+  --icon-empty: #E3EEE0;
+  --scrollbar-thumb: #E3EEE0;
+  --primary-bg: #FF6B2C;
   --primary-text: #FFFFFF;
-  --stamp: #DB2450;
-  --tape: #FFD23F;
+  --stamp: #D93A2B;
+  --tape: #FFCB05;
 
   /* Budget category palette — validated categorical order (dataviz skill),
      ALL checks pass at surface #ffffff; contrast WARN on 3 slots is
@@ -42,23 +42,23 @@ input, select, textarea {
 
 :root.dark {
   color-scheme: dark;
-  /* Postcard Pop, night mode — deep indigo-plum instead of ink navy,
-     same coral/yellow accents brightened a touch for dark contrast. */
-  --bg: #1A1530;
-  --surface: #241E42;
-  --border: #352C5C;
-  --text-primary: #F5F3FF;
-  --text-body: #E8E4FA;
-  --text-tertiary: #C9C2E8;
-  --text-secondary: #A89FD1;
-  --text-muted: #8A80B8;
-  --text-faint: #5C5485;
-  --icon-empty: #4A4270;
-  --scrollbar-thumb: #453C70;
-  --primary-bg: #A78BFA;
-  --primary-text: #1A1530;
-  --stamp: #FF7A94;
-  --tape: #FFD23F;
+  /* Mandarin Grove, night mode — deep forest green instead of indigo-plum,
+     same mandarin/yellow accents brightened a touch for dark contrast. */
+  --bg: #1C2A1E;
+  --surface: #263A28;
+  --border: #3A4F38;
+  --text-primary: #FFF6E8;
+  --text-body: #EDE4D2;
+  --text-tertiary: #CBDCC6;
+  --text-secondary: #9DB49A;
+  --text-muted: #7E9A7C;
+  --text-faint: #4C6349;
+  --icon-empty: #35492F;
+  --scrollbar-thumb: #35492F;
+  --primary-bg: #FF7A3D;
+  --primary-text: #FFFFFF;
+  --stamp: #FF6B5C;
+  --tape: #FFCB05;
 
   /* Budget category palette — dark-surface steps, validated against #26221b. */
   --cat-flights: #3987e5;
